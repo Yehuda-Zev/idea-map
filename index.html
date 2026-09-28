@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Idea Map</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14161a" media="(prefers-color-scheme: dark)">
 <style>
 :root{color-scheme:light;--bg:#f4f5f7;--panel:#fff;--line:#d5d9e0;--txt:#1b1f27;--acc:#2f6fed;--dot:#cfd4dc;--btn:#eef0f4;--btnh:#e1e5ec;--shadow:rgba(20,30,50,.18);--ok:#16a34a}
 @media (prefers-color-scheme:dark){
@@ -109,6 +114,7 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
   <button id="load">Load</button>
   <button id="reset">Reset view</button>
   <button id="theme" title="Theme: follows system by default">Auto</button>
+  <button id="install" title="Install as an app" hidden>&#11015; Install</button>
   <input type="file" id="file" accept=".json,application/json" hidden>
 </div>
 <div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Del: delete</div>
@@ -1018,7 +1024,18 @@ try {
   if (raw) load(JSON.parse(raw));
 } catch (_) { boxes = []; nodes = []; edges = []; }
 applyView(); commit(); updBar();
-window.__ideamap = {get boxes() { return boxes; }, get nodes() { return nodes; }, get edges() { return edges; }, get routes() { return routes; }};
+/* ---------- installable app ---------- */
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#install').hidden = false; });
+window.addEventListener('appinstalled', () => { installEvt = null; $('#install').hidden = true; });
+$('#install').onclick = async () => {
+  if (!installEvt) return;
+  installEvt.prompt(); await installEvt.userChoice; installEvt = null; $('#install').hidden = true;
+};
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+window.__ideamap ={get boxes() { return boxes; }, get nodes() { return nodes; }, get edges() { return edges; }, get routes() { return routes; }};
 })();
 </script>
 </body>
