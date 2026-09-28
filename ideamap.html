@@ -13,11 +13,12 @@
 :root[data-theme=dark]{color-scheme:dark;--bg:#14161a;--panel:#1e2128;--line:#2f343d;--txt:#e6e8ec;--acc:#5b9dff;--dot:#2a2e36;--btn:#2a2f39;--btnh:#343b48;--shadow:rgba(0,0,0,.4);--ok:#7cfc9a}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif}
-#stage{position:fixed;inset:0;background-image:radial-gradient(var(--dot) 1.2px,transparent 1.2px);background-size:24px 24px;-webkit-user-select:none;user-select:none}
+#stage{position:fixed;inset:0;background-image:radial-gradient(var(--dot) 1.2px,transparent 1.2px);background-size:20px 20px;-webkit-user-select:none;user-select:none}
 #world{position:absolute;left:0;top:0;transform-origin:0 0}
 #edges{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none;z-index:0}
 .box{position:absolute;min-width:120px;padding:10px;z-index:1;border-radius:10px;
-  border:2px solid color-mix(in srgb,currentColor 25%,transparent);box-shadow:0 4px 14px var(--shadow)}
+  border:2px solid color-mix(in srgb,currentColor 25%,transparent);
+  box-shadow:0 0 0 var(--ring,0px) var(--acc),0 4px 14px var(--shadow)}
 .box.sel{outline:2px solid var(--acc);outline-offset:3px}
 .box.drop{outline:2px dashed var(--ok);outline-offset:3px}
 .title,.ltxt{-webkit-user-select:text;user-select:text;outline:none;word-break:break-word}
@@ -38,7 +39,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
   font-size:11px;line-height:1;cursor:pointer;background:color-mix(in srgb,currentColor 18%,transparent);-webkit-user-select:none;user-select:none}
 .cbtn:hover{background:color-mix(in srgb,currentColor 32%,transparent)}
 .box.sel .cbtn{display:flex}
-.cbtn.hold{animation:hold 3s linear forwards}
+.cbtn.hold{animation:hold 2s linear forwards}
 @keyframes hold{from{box-shadow:0 0 0 0 var(--acc)}to{box-shadow:0 0 0 7px var(--acc)}}
 #handles{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none;z-index:1000000}
 .hnd{display:none;r:calc(7px*var(--k,1));fill:#fff;stroke:var(--acc);stroke-width:2.5;cursor:grab;pointer-events:all}
@@ -49,17 +50,21 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .rsz[data-c=ne],.rsz[data-c=sw]{cursor:nesw-resize}
 body.linking .hnd,body.linking .rsz{pointer-events:none}
 .tmp{fill:none;stroke:var(--ok);stroke-width:2.5;stroke-dasharray:6 5}
-.edge .line{fill:none;stroke-linecap:round}
-.edge .hit{fill:none;stroke:transparent;pointer-events:stroke;cursor:pointer}
-.edge .halo{fill:none;stroke:var(--acc);opacity:0;stroke-linecap:round}
+.edge .line{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.edge .halo{fill:none;stroke:var(--acc);opacity:0;stroke-linecap:round;stroke-linejoin:round}
 .edge.sel .halo{opacity:.35}
 .edge.drop .halo{opacity:.5;stroke:var(--ok)}
-.edge text{font-size:13px;fill:var(--txt);paint-order:stroke;stroke:var(--bg);stroke-width:5px;stroke-linejoin:round;text-anchor:middle;pointer-events:none}
+.edge text{font-size:13px;fill:var(--txt);paint-order:stroke;stroke:var(--bg);stroke-width:5px;stroke-linejoin:round;text-anchor:middle}
+.node{stroke:var(--bg);stroke-width:2}
+.node.sel{stroke:var(--acc);stroke-width:3}
+.node.drop{stroke:var(--ok);stroke-width:3}
 .edge-input{position:absolute;transform:translate(-50%,-50%);z-index:60;width:150px;padding:3px 6px;font:13px system-ui;
   background:var(--panel);color:var(--txt);border:1px solid var(--acc);border-radius:5px;outline:none}
 .rb{position:absolute;display:none;z-index:40;pointer-events:none;border:1.5px dashed var(--acc);background:color-mix(in srgb,var(--acc) 9%,transparent);border-radius:10px}
-#bar{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;
-  padding:6px 10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px var(--shadow);max-width:96vw}
+#bar{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:6px;align-items:center;flex-wrap:nowrap;width:max-content;
+  padding:6px 10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px var(--shadow)}
+#bar>*{flex-shrink:0}
+@media (max-width:1180px){#bar{flex-wrap:wrap;justify-content:center;width:auto;left:2vw;right:2vw;transform:none}}
 #bar button{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;font:inherit}
 #bar button:hover:not(:disabled){background:var(--btnh)}
 #bar button:disabled{opacity:.35;cursor:default}
@@ -72,8 +77,6 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
 #custom{width:28px;height:26px;padding:0;border:none;background:none;cursor:pointer}
 #custom:disabled{opacity:.35}
 #target{font-size:12px;opacity:.7}
-#bar{flex-wrap:nowrap;width:max-content}#bar>*{flex-shrink:0}
-@media (max-width:1100px){#bar{flex-wrap:wrap;width:auto;left:2vw;right:2vw;transform:none}}
 #hint{position:fixed;left:12px;bottom:10px;z-index:90;font-size:12px;opacity:.6;max-width:70vw;pointer-events:none}
 #empty{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.4;font-size:18px}
 #empty[hidden]{display:none}
@@ -82,7 +85,7 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
 <body>
 <div id="stage">
   <div id="world">
-    <svg id="edges"></svg>
+    <svg id="edges"><g id="eg"></g><g id="ng"></g></svg>
     <svg id="handles"><circle class="hnd" id="hS" data-w="s"></circle><circle class="hnd" id="hE" data-w="e"></circle><rect class="rsz" data-c="nw"></rect><rect class="rsz" data-c="ne"></rect><rect class="rsz" data-c="sw"></rect><rect class="rsz" data-c="se"></rect></svg>
     <div class="rb" id="rb"></div>
   </div>
@@ -96,10 +99,9 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
   <input type="color" id="custom" title="Custom color">
   <span id="target"></span>
   <span class="sep"></span>
-  <span id="eopts">
-    <input type="range" id="ew" min="1" max="12" step="1" value="3" title="Arrow thickness">
-    <select id="es" title="Arrow line style"><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select>
-  </span>
+  <input type="range" id="ew" min="1" max="12" step="1" value="3" title="Arrow thickness">
+  <select id="es" title="Arrow line style"><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select>
+  <select id="er" title="Arrow routing"><option value="avoid">Avoid boxes</option><option value="direct">Ignore boxes</option></select>
   <span class="sep"></span>
   <button id="del">Delete</button>
   <button id="swap" title="Reverse arrow direction">&#8644; Swap</button>
@@ -109,32 +111,39 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
   <button id="theme" title="Theme: follows system by default">Auto</button>
   <input type="file" id="file" accept=".json,application/json" hidden>
 </div>
-<div id="hint">Drag empty space: new box &middot; Drag a box border or an arrow: new arrow (can end on boxes or arrows) &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corner squares resize, corner button collapses (hold 3s = all) &middot; Arrow selected: drag end dots to slide, Swap reverses &middot; Double-click: rename title / arrow label &middot; Del: delete</div>
+<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Del: delete</div>
 
 <script>
 (() => {
 const $ = s => document.querySelector(s);
-const stage = $('#stage'), world = $('#world'), svg = $('#edges'), rb = $('#rb'), root = document.documentElement;
+const stage = $('#stage'), world = $('#world'), eg = $('#eg'), ng = $('#ng'), rb = $('#rb'), root = document.documentElement;
 const NS = 'http://www.w3.org/2000/svg';
 const PALETTE = ['#2b3140','#ffffff','#9aa4b5','#3b6fd4','#2f9e6f','#c98a1b','#d1495b','#8a5cd6','#e8e8ea'];
 const EDGE_DEFAULT = '#9aa4b5';
-const KEY = 'ideamap-v2', OLDKEY = 'ideamap-v1', TKEY = 'ideamap-theme';
-const EDGE_ZONE = 8;
+const KEY = 'ideamap-v3', OLDKEYS = ['ideamap-v2', 'ideamap-v1'], TKEY = 'ideamap-theme';
+const G = 20;                 // grid size (world px)
+const HOLD_MS = 2000;
+const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];   // 0 right, 1 down, 2 left, 3 up
 
-let boxes = [], edges = [], view = {x:0, y:0, z:1};
-let sel = null, drag = null, space = false, zTop = 1, tmp = null;
-const els = {}, gEls = {};
+let boxes = [], nodes = [], edges = [], view = {x:0, y:0, z:1};
+let sel = null, drag = null, space = false, zTop = 1, tmp = null, hover = null;
+const els = {}, gEls = {}, nEls = {};
+let routes = {}, ends = {};
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-3);
 const S = (n, a = {}) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
 const toWorld = (cx, cy) => ({x: (cx - view.x) / view.z, y: (cy - view.y) / view.z});
 const clamp01 = v => Math.min(1, Math.max(0, v));
+const snapG = v => Math.round(v / G) * G;
 const ink = hex => { const n = parseInt(hex.slice(1), 16); const l = .299*(n>>16) + .587*(n>>8&255) + .114*(n&255); return l > 150 ? '#14161a' : '#f2f3f5'; };
 const isEditing = () => {
   const a = document.activeElement;
   return !!a && (a.isContentEditable || a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'color' && a.type !== 'range'));
 };
+const byId = id => boxes.find(b => b.id === id) || nodes.find(n => n.id === id) || edges.find(e => e.id === id);
+const isBox = id => boxes.some(b => b.id === id);
+const isNode = id => nodes.some(n => n.id === id);
 
-/* ---------- theme (follows system unless overridden) ---------- */
+/* ---------- theme ---------- */
 const sysDark = matchMedia('(prefers-color-scheme: dark)');
 let themePref = 'auto';
 try { themePref = localStorage.getItem(TKEY) || 'auto'; } catch (_) {}
@@ -172,19 +181,52 @@ document.addEventListener('paste', e => {
   document.execCommand('insertText', false, t);
 });
 
+/* ---------- graph cleanup: drop dangling pieces, merge pass-through nodes ---------- */
+function normalize() {
+  let changed = false;
+  for (let loop = true; loop;) {
+    loop = false;
+    const ids = new Set([...boxes.map(b => b.id), ...nodes.map(n => n.id)]);
+    const before = edges.length;
+    edges = edges.filter(e => ids.has(e.from) && ids.has(e.to) && e.from !== e.to);
+    if (edges.length !== before) loop = changed = true;
+    for (const n of nodes.slice()) {
+      const ins = edges.filter(e => e.to === n.id), outs = edges.filter(e => e.from === n.id);
+      const deg = ins.length + outs.length;
+      if (deg === 0) { nodes = nodes.filter(x => x !== n); loop = changed = true; }
+      else if (deg === 1) {
+        const e = ins[0] || outs[0];
+        edges = edges.filter(x => x !== e); nodes = nodes.filter(x => x !== n); loop = changed = true;
+      } else if (ins.length === 1 && outs.length === 1) {
+        const a = ins[0], b = outs[0];
+        if (a.from === b.to) edges = edges.filter(x => x !== a && x !== b);
+        else { a.to = b.to; a.ta = b.ta; a.label = a.label || b.label; edges = edges.filter(x => x !== b); }
+        nodes = nodes.filter(x => x !== n); loop = changed = true;
+      }
+      if (loop) break;
+    }
+  }
+  if (changed) {
+    if (sel && !byId(sel.id)) sel = null;
+    syncNodeEls(); scheduleDraw();
+  }
+  return changed;
+}
+
 /* ---------- history / persistence ---------- */
 let hist = [], hp = -1, tm = 0, vtm = 0;
 const snap = () => JSON.stringify({
   boxes: boxes.map(b => ({...b, lines: b.lines.filter(s => s.trim())})),
-  edges
+  nodes, edges
 });
 function persist() {
   try { localStorage.setItem(KEY, JSON.stringify({...JSON.parse(snap()), view})); } catch (_) {}
 }
 function commit() {
   clearTimeout(tm);
+  normalize();
   const s = snap();
-  if (hp >= 0 && hist[hp] === s) return;
+  if (hp >= 0 && hist[hp] === s) { updBar(); return; }
   hist = hist.slice(0, hp + 1); hist.push(s); hp = hist.length - 1;
   if (hist.length > 200) { hist.shift(); hp--; }
   persist(); updBar();
@@ -192,7 +234,7 @@ function commit() {
 const schedule = () => { clearTimeout(tm); tm = setTimeout(commit, 500); };
 function restore(s) {
   const d = JSON.parse(s);
-  boxes = d.boxes; edges = d.edges; sel = null; rebuild(); updBar();
+  boxes = d.boxes; nodes = d.nodes || []; edges = d.edges; sel = null; rebuild(); updBar();
 }
 function undo() { if (hp > 0) { hp--; restore(hist[hp]); persist(); } }
 function redo() { if (hp < hist.length - 1) { hp++; restore(hist[hp]); persist(); } }
@@ -200,15 +242,15 @@ function redo() { if (hp < hist.length - 1) { hp++; restore(hist[hp]); persist()
 /* ---------- view ---------- */
 function applyView() {
   world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`;
-  stage.style.backgroundSize = `${24*view.z}px ${24*view.z}px`;
+  stage.style.backgroundSize = `${G*view.z}px ${G*view.z}px`;
   stage.style.backgroundPosition = `${view.x}px ${view.y}px`;
   $('#handles').style.setProperty('--k', 1 / view.z);
   clearTimeout(vtm); vtm = setTimeout(persist, 400);
-  drawEdges();
+  scheduleDraw();
 }
 
 /* ---------- boxes ---------- */
-const ro = new ResizeObserver(() => drawEdges());
+const ro = new ResizeObserver(() => scheduleDraw());
 
 function styleBox(b) {
   const el = els[b.id];
@@ -263,7 +305,7 @@ function editTitle(b) {
 function setCollapsed(b, v) { b.collapsed = v; styleBox(b); }
 function mkBox(b) {
   const el = document.createElement('div'); el.className = 'box'; el.dataset.id = b.id;
-  el.innerHTML = '<div class="cbtn" title="Collapse / expand (hold 3s: all boxes)"></div><div class="title" data-ph="Title…"></div><div class="lines"></div><div class="addline">+ line</div>';
+  el.innerHTML = '<div class="cbtn" title="Collapse / expand (hold 2s: all boxes)"></div><div class="title" data-ph="Title…"></div><div class="lines"></div><div class="addline">+ line</div>';
   world.appendChild(el); els[b.id] = el;
   const t = el.querySelector('.title');
   t.contentEditable = 'false'; t.textContent = b.title;
@@ -288,82 +330,43 @@ function mkBox(b) {
     cb.classList.add('hold');
     const timer = setTimeout(() => {
       fired = true; cb.classList.remove('hold');
-      boxes.forEach(x => setCollapsed(x, target)); drawEdges(); commit();
-    }, 3000);
+      boxes.forEach(x => setCollapsed(x, target)); scheduleDraw(); commit();
+    }, HOLD_MS);
     const up = () => {
       window.removeEventListener('mouseup', up); clearTimeout(timer); cb.classList.remove('hold');
-      if (!fired) { setCollapsed(b, target); drawEdges(); commit(); }
+      if (!fired) { setCollapsed(b, target); scheduleDraw(); commit(); }
     };
     window.addEventListener('mouseup', up);
   });
   styleBox(b); renderLines(b); ro.observe(el);
   return el;
 }
-/* delete boxes/arrows by id; arrows attached to anything removed go too */
 function delObjs(ids, silent) {
   const rm = new Set(ids);
-  for (let ch = true; ch;) {
-    ch = false;
-    edges.forEach(e => { if (!rm.has(e.id) && (rm.has(e.from) || rm.has(e.to))) { rm.add(e.id); ch = true; } });
-  }
   boxes.filter(b => rm.has(b.id)).forEach(b => {
     const el = els[b.id]; if (el) { ro.unobserve(el); el.remove(); delete els[b.id]; }
   });
   boxes = boxes.filter(b => !rm.has(b.id));
-  edges = edges.filter(e => !rm.has(e.id));
+  nodes = nodes.filter(n => !rm.has(n.id));
+  edges = edges.filter(e => !rm.has(e.id) && !rm.has(e.from) && !rm.has(e.to));
   if (sel && rm.has(sel.id)) sel = null;
-  drawEdges(); updBar();
-  if (!silent) commit();
+  syncNodeEls(); scheduleDraw(); updBar();
+  if (!silent) commit(); else normalize();
 }
 
-/* ---------- geometry (arrows can attach to boxes or to other arrows) ---------- */
+/* ---------- geometry helpers ---------- */
 const R = b => ({x: b.x, y: b.y, w: els[b.id].offsetWidth, h: els[b.id].offsetHeight});
-const lerp = (a, b, t) => ({x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t});
-const projT = (p, a, b) => {
-  const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy;
-  return l ? clamp01(((p.x - a.x) * dx + (p.y - a.y) * dy) / l) : 0;
-};
-function makeGeo() {
-  const bm = new Map(boxes.map(b => [b.id, b])), em = new Map(edges.map(e => [e.id, e]));
-  const memo = new Map(), busy = new Set();
-  const geo = e => {
-    if (memo.has(e.id)) return memo.get(e.id);
-    if (busy.has(e.id)) return null;
-    busy.add(e.id);
-    let out = null;
-    const sp = geo.pt(e.from, e.fa);
-    if (sp) { const ep = geo.end(e, sp); if (ep) out = {S: sp, E: ep, mid: lerp(sp, ep, .5)}; }
-    busy.delete(e.id); memo.set(e.id, out); return out;
-  };
-  geo.pt = (id, a) => {
-    const b = bm.get(id);
-    if (b) {
-      if (!els[b.id]) return null;
-      const r = R(b); a = a || {};
-      return {x: r.x + (a.x || 0) * r.w, y: r.y + (a.y || 0) * r.h};
-    }
-    const oe = em.get(id); if (!oe) return null;
-    const G = geo(oe); if (!G) return null;
-    return lerp(G.S, G.E, a && a.t != null ? a.t : .5);
-  };
-  geo.end = (e, sp) => {
-    const b = bm.get(e.to);
-    if (b) {
-      if (!els[b.id]) return null;
-      const r = R(b);
-      if (e.ta && e.ta.x != null) return {x: r.x + e.ta.x * r.w, y: r.y + e.ta.y * r.h};
-      const c = {x: r.x + r.w / 2, y: r.y + r.h / 2}, dx = sp.x - c.x, dy = sp.y - c.y;
-      if ((Math.abs(dx) < r.w / 2 && Math.abs(dy) < r.h / 2) || (!dx && !dy)) return c;
-      const t = Math.min(dx ? r.w / 2 / Math.abs(dx) : Infinity, dy ? r.h / 2 / Math.abs(dy) : Infinity);
-      return {x: c.x + dx * t, y: c.y + dy * t};
-    }
-    const oe = em.get(e.to); if (!oe) return null;
-    const G = geo(oe); if (!G) return null;
-    return lerp(G.S, G.E, e.ta && e.ta.t != null ? e.ta.t : projT(sp, G.S, G.E));
-  };
-  geo.isBox = id => bm.has(id);
-  geo.edge = id => em.get(id);
-  return geo;
+const sideOf = a => a.x <= 0 ? 'l' : a.x >= 1 ? 'r' : a.y <= 0 ? 't' : 'b';
+function clampGrid(v, lo, hi) {
+  const a = Math.ceil((lo + G * .5) / G) * G, b = Math.floor((hi - G * .5) / G) * G;
+  if (a > b) return (lo + hi) / 2;
+  return Math.min(b, Math.max(a, snapG(v)));
+}
+/* anchor fractions -> point on border (snapped to grid along the side) + outward direction */
+function anchorPt(r, a) {
+  const s = sideOf(a);
+  if (s === 'l' || s === 'r') return {x: s === 'l' ? r.x : r.x + r.w, y: clampGrid(r.y + a.y * r.h, r.y, r.y + r.h), dir: s === 'l' ? 2 : 0};
+  return {x: clampGrid(r.x + a.x * r.w, r.x, r.x + r.w), y: s === 't' ? r.y : r.y + r.h, dir: s === 't' ? 3 : 1};
 }
 function snapBorder(r, p) {
   const x = Math.min(r.x + r.w, Math.max(r.x, p.x)), y = Math.min(r.y + r.h, Math.max(r.y, p.y));
@@ -372,61 +375,235 @@ function snapBorder(r, p) {
   if (i === 0) fx = 0; else if (i === 1) fx = 1; else if (i === 2) fy = 0; else fy = 1;
   return {x: fx, y: fy};
 }
-/* anchor for a point p on object id: fractions on a box border, or t along an arrow */
-function slideAnchor(geo, id, p) {
-  if (geo.isBox(id)) return els[id] ? snapBorder(R(boxes.find(b => b.id === id)), p) : null;
-  const oe = geo.edge(id), G = oe && geo(oe);
-  return G ? {t: projT(p, G.S, G.E)} : null;
+/* side of box r facing point p */
+function facing(r, p) {
+  const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+  const dx = (p.x - cx) / (r.w / 2), dy = (p.y - cy) / (r.h / 2);
+  if (Math.abs(dx) >= Math.abs(dy)) return {x: dx > 0 ? 1 : 0, y: clamp01((p.y - r.y) / r.h)};
+  return {x: clamp01((p.x - r.x) / r.w), y: dy > 0 ? 1 : 0};
+}
+function stubPt(p, dir) {
+  if (dir === 0) return {x: Math.ceil((p.x + G) / G) * G, y: snapG(p.y)};
+  if (dir === 2) return {x: Math.floor((p.x - G) / G) * G, y: snapG(p.y)};
+  if (dir === 1) return {x: snapG(p.x), y: Math.ceil((p.y + G) / G) * G};
+  return {x: snapG(p.x), y: Math.floor((p.y - G) / G) * G};
+}
+function simplify(p) {
+  const o = [];
+  for (const q of p) { const l = o[o.length - 1]; if (l && Math.abs(l.x - q.x) < .01 && Math.abs(l.y - q.y) < .01) continue; o.push({x: q.x, y: q.y}); }
+  if (o.length < 3) return o;
+  const r = [o[0]];
+  for (let i = 1; i < o.length - 1; i++) {
+    const a = r[r.length - 1], b = o[i], c = o[i + 1];
+    const col = (Math.abs(a.x - b.x) < .01 && Math.abs(b.x - c.x) < .01) || (Math.abs(a.y - b.y) < .01 && Math.abs(b.y - c.y) < .01);
+    if (!col) r.push(b);
+  }
+  r.push(o[o.length - 1]);
+  return r;
+}
+function segDist(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy;
+  const t = l ? clamp01(((p.x - a.x) * dx + (p.y - a.y) * dy) / l) : 0;
+  return Math.hypot(p.x - a.x - dx * t, p.y - a.y - dy * t);
+}
+function polyDist(p, pts) {
+  let m = Infinity;
+  for (let i = 0; i < pts.length - 1; i++) m = Math.min(m, segDist(p, pts[i], pts[i + 1]));
+  return m;
 }
 
-/* ---------- arrows ---------- */
-function mkEdgeG(e) {
-  const g = S('g', {class: 'edge'}); g.dataset.id = e.id;
-  g.append(S('path', {class: 'halo'}), S('path', {class: 'hit'}), S('path', {class: 'line'}),
-           S('polygon', {class: 'head'}), S('circle', {class: 'dot'}), S('text'));
-  svg.appendChild(g); gEls[e.id] = g; return g;
+/* ---------- grid router: A* over (cell, heading), shortest length, fewest bends as tiebreak ---------- */
+function astar(Sp, sDir, Ep, eDir, obst, m) {
+  const x0 = Math.min(Sp.x, Ep.x) - m * G, y0 = Math.min(Sp.y, Ep.y) - m * G;
+  const x1 = Math.max(Sp.x, Ep.x) + m * G, y1 = Math.max(Sp.y, Ep.y) + m * G;
+  const W = Math.round((x1 - x0) / G) + 1, H = Math.round((y1 - y0) / G) + 1;
+  if (W * H > 120000) return null;
+  const blk = new Uint8Array(W * H), PAD = 8;
+  for (const r of obst) {
+    const a = Math.max(0, Math.floor((r.x - PAD - x0) / G) + 1), b = Math.min(W - 1, Math.ceil((r.x + r.w + PAD - x0) / G) - 1);
+    const c = Math.max(0, Math.floor((r.y - PAD - y0) / G) + 1), d = Math.min(H - 1, Math.ceil((r.y + r.h + PAD - y0) / G) - 1);
+    for (let j = c; j <= d; j++) for (let i = a; i <= b; i++) blk[j * W + i] = 1;
+  }
+  const sx = Math.round((Sp.x - x0) / G), sy = Math.round((Sp.y - y0) / G);
+  const ex = Math.round((Ep.x - x0) / G), ey = Math.round((Ep.y - y0) / G);
+  const si = sy * W + sx, ei = ey * W + ex;
+  const N = W * H * 4, gs = new Float64Array(N).fill(Infinity), from = new Int32Array(N).fill(-1);
+  const hf = [], hs = [];
+  const push = (f, s) => {
+    let i = hf.length; hf.push(f); hs.push(s);
+    while (i > 0) { const p = (i - 1) >> 1; if (hf[p] <= f) break; hf[i] = hf[p]; hs[i] = hs[p]; i = p; }
+    hf[i] = f; hs[i] = s;
+  };
+  const pop = () => {
+    const f = hf[0], s = hs[0], lf = hf.pop(), ls = hs.pop(), n = hf.length;
+    if (n) {
+      let i = 0;
+      for (;;) {
+        let c = 2 * i + 1; if (c >= n) break;
+        if (c + 1 < n && hf[c + 1] < hf[c]) c++;
+        if (hf[c] >= lf) break;
+        hf[i] = hf[c]; hs[i] = hs[c]; i = c;
+      }
+      hf[i] = lf; hs[i] = ls;
+    }
+    return [f, s];
+  };
+  const TURN = 0.02;
+  const h = c => Math.abs(c % W - ex) + Math.abs(((c / W) | 0) - ey);
+  for (let d = 0; d < 4; d++) if (sDir < 0 || d === sDir) { gs[si * 4 + d] = 0; push(h(si), si * 4 + d); }
+  let best = Infinity, bestS = -1;
+  while (hf.length) {
+    const [f, st] = pop();
+    if (f >= best) break;
+    const c = st >> 2, d = st & 3, gc = gs[st];
+    if (f > gc + h(c) + 1e-9) continue;
+    if (c === ei) {
+      let x = 0;
+      if (eDir >= 0 && d !== eDir) { if (d === ((eDir + 2) & 3)) continue; x = TURN; }
+      if (gc + x < best) { best = gc + x; bestS = st; }
+      continue;
+    }
+    const cx = c % W, cy = (c / W) | 0;
+    for (let nd = 0; nd < 4; nd++) {
+      if (nd === ((d + 2) & 3)) continue;
+      const nx = cx + DX[nd], ny = cy + DY[nd];
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const nc = ny * W + nx;
+      if (blk[nc] && nc !== ei) continue;
+      const ns = nc * 4 + nd, ngc = gc + 1 + (nd !== d ? TURN : 0);
+      if (ngc < gs[ns]) { gs[ns] = ngc; from[ns] = st; push(ngc + h(nc), ns); }
+    }
+  }
+  if (bestS < 0) return null;
+  const out = [];
+  for (let st = bestS; st !== -1; st = from[st]) { const c = st >> 2; out.push({x: x0 + (c % W) * G, y: y0 + ((c / W) | 0) * G}); }
+  return out.reverse();
+}
+function computeRoute(A, B, obst) {
+  const Sp = A.box ? stubPt(A.P, A.dir) : {x: snapG(A.P.x), y: snapG(A.P.y)};
+  const Ep = B.box ? stubPt(B.P, B.dir) : {x: snapG(B.P.x), y: snapG(B.P.y)};
+  const sDir = A.box ? A.dir : -1, eDir = B.box ? (B.dir + 2) & 3 : -1;
+  let path = null;
+  if (obst.length) path = astar(Sp, sDir, Ep, eDir, obst, 6) || astar(Sp, sDir, Ep, eDir, obst, 25);
+  if (!path) path = astar(Sp, sDir, Ep, eDir, [], 3);
+  if (!path) path = [Sp, Ep];
+  return simplify([A.P, ...path, B.P]);
+}
+
+/* ---------- drawing ---------- */
+function rpath(pts, R0) {
+  let d = `M${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const a = pts[i - 1], c = pts[i], b = pts[i + 1];
+    const l1 = Math.hypot(c.x - a.x, c.y - a.y), l2 = Math.hypot(b.x - c.x, b.y - c.y);
+    const r = Math.min(R0, l1 / 2, l2 / 2);
+    if (!l1 || !l2 || r < .5) { d += `L${c.x} ${c.y}`; continue; }
+    const p1 = {x: c.x - (c.x - a.x) / l1 * r, y: c.y - (c.y - a.y) / l1 * r};
+    const p2 = {x: c.x + (b.x - c.x) / l2 * r, y: c.y + (b.y - c.y) / l2 * r};
+    d += `L${p1.x} ${p1.y}Q${c.x} ${c.y} ${p2.x} ${p2.y}`;
+  }
+  const z = pts[pts.length - 1];
+  return d + `L${z.x} ${z.y}`;
 }
 function dashFor(style, w) {
   if (style === 'dashed') return `${w * 3} ${w * 2.4}`;
   if (style === 'dotted') return `0.1 ${w * 2.2}`;
   return 'none';
 }
-function drawEdges() {
-  const geo = makeGeo(), live = new Set();
-  edges.forEach(e => {
-    const G = geo(e); if (!G) return;
+function midOf(pts) {
+  let L = 0; for (let i = 0; i < pts.length - 1; i++) L += Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+  let t = L / 2;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1], l = Math.hypot(b.x - a.x, b.y - a.y);
+    if (t <= l && l) return {x: a.x + (b.x - a.x) * t / l, y: a.y + (b.y - a.y) * t / l};
+    t -= l;
+  }
+  return pts[0];
+}
+function mkEdgeG(e) {
+  const g = S('g', {class: 'edge'}); g.dataset.id = e.id;
+  g.append(S('path', {class: 'halo'}), S('path', {class: 'line'}), S('polygon', {class: 'head'}), S('text'));
+  eg.appendChild(g); gEls[e.id] = g; return g;
+}
+function syncNodeEls() {
+  const live = new Set(nodes.map(n => n.id));
+  for (const id in nEls) if (!live.has(id)) { nEls[id].remove(); delete nEls[id]; }
+  nodes.forEach(n => { if (!nEls[n.id]) { const c = S('circle', {class: 'node'}); c.dataset.id = n.id; ng.appendChild(c); nEls[n.id] = c; } });
+}
+const nodeR = n => {
+  let w = 0; edges.forEach(e => { if (e.from === n.id || e.to === n.id) w = Math.max(w, e.w || 3); });
+  return Math.max(4.5, w * .9 + 2);
+};
+const hoverK = (type, id) => hover && hover.type === type && hover.id === id ? hover.k : 0;
+
+let raf = 0;
+function scheduleDraw() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
+function draw() {
+  const nm = new Map(nodes.map(n => [n.id, n]));
+  const rects = new Map();
+  boxes.forEach(b => { if (els[b.id]) rects.set(b.id, R(b)); });
+  const obst = [...rects.values()];
+  const sig = obst.map(r => `${r.x},${r.y},${r.w},${r.h}`).join('|');
+  const refOf = (id, a) => {
+    if (nm.has(id)) return nm.get(id);
+    const r = rects.get(id); if (!r) return null;
+    return a ? anchorPt(r, a) : {x: r.x + r.w / 2, y: r.y + r.h / 2};
+  };
+  const endOf = (id, a, ref) => {
+    if (nm.has(id)) { const n = nm.get(id); return {P: {x: n.x, y: n.y}, dir: -1, box: false}; }
+    const r = rects.get(id); if (!r || !ref) return null;
+    const q = anchorPt(r, a || facing(r, ref));
+    return {P: {x: q.x, y: q.y}, dir: q.dir, box: true};
+  };
+  const live = new Set(); ends = {};
+  for (const e of edges) {
+    const A = endOf(e.from, e.fa, refOf(e.to, e.ta)); if (!A) continue;
+    const B = endOf(e.to, e.ta, A.P); if (!B) continue;
+    ends[e.id] = {A, B};
+    const direct = e.mode === 'direct';
+    const key = [A.P.x, A.P.y, A.dir, B.P.x, B.P.y, B.dir, direct ? 'd' : sig].join(',');
+    let rc = routes[e.id];
+    if (!rc || rc.key !== key) { rc = routes[e.id] = {key, pts: computeRoute(A, B, direct ? [] : obst)}; }
     live.add(e.id);
     const g = gEls[e.id] || mkEdgeG(e);
-    g.classList.toggle('sel', !!sel && sel.type === 'edge' && sel.id === e.id);
-    const w = e.w || 3;
-    const ang = Math.atan2(G.E.y - G.S.y, G.E.x - G.S.x), L = Math.hypot(G.E.x - G.S.x, G.E.y - G.S.y);
-    const hl = 8 + w * 2.2, back = Math.min(hl * .7, L / 2);
-    const P = {x: G.E.x - Math.cos(ang) * back, y: G.E.y - Math.sin(ang) * back};
-    const full = `M${G.S.x} ${G.S.y}L${G.E.x} ${G.E.y}`;
-    const halo = g.querySelector('.halo'), hit = g.querySelector('.hit');
-    halo.setAttribute('d', full); halo.style.strokeWidth = w + 8;
-    hit.setAttribute('d', full); hit.style.strokeWidth = Math.max(16, w + 10);
+    g.classList.toggle('sel', !!sel && sel.id === e.id);
+    const w = e.w || 3, hw = w + hoverK('edge', e.id) * 5;
+    let pts = rc.pts.map(p => ({...p}));
+    const head = g.querySelector('.head');
+    if (B.box && pts.length >= 2) {
+      const z = pts[pts.length - 1], y = pts[pts.length - 2];
+      const L = Math.hypot(z.x - y.x, z.y - y.y) || 1, ux = (z.x - y.x) / L, uy = (z.y - y.y) / L;
+      const hl = 8 + w * 2.2, back = Math.min(hl * .7, L * .8);
+      pts[pts.length - 1] = {x: z.x - ux * back, y: z.y - uy * back};
+      const px = -uy, py = ux, hwid = hl * .45;
+      head.setAttribute('points', `${z.x},${z.y} ${z.x - ux * hl + px * hwid},${z.y - uy * hl + py * hwid} ${z.x - ux * hl - px * hwid},${z.y - uy * hl - py * hwid}`);
+      head.setAttribute('fill', e.color); head.style.display = '';
+    } else head.style.display = 'none';
+    const d = rpath(pts, 10), full = rpath(rc.pts, 10);
+    const halo = g.querySelector('.halo'); halo.setAttribute('d', full); halo.style.strokeWidth = w + 8;
     const ln = g.querySelector('.line');
-    ln.setAttribute('d', `M${G.S.x} ${G.S.y}L${P.x} ${P.y}`); ln.setAttribute('stroke', e.color);
-    ln.style.strokeWidth = w; ln.style.strokeDasharray = dashFor(e.style, w);
-    const p1 = {x: G.E.x - hl * Math.cos(ang - .42), y: G.E.y - hl * Math.sin(ang - .42)};
-    const p2 = {x: G.E.x - hl * Math.cos(ang + .42), y: G.E.y - hl * Math.sin(ang + .42)};
-    const h = g.querySelector('.head');
-    h.setAttribute('points', `${G.E.x},${G.E.y} ${p1.x},${p1.y} ${p2.x},${p2.y}`); h.setAttribute('fill', e.color);
-    const d = g.querySelector('.dot');
-    d.setAttribute('cx', G.S.x); d.setAttribute('cy', G.S.y); d.setAttribute('r', Math.max(3.5, w * .9)); d.setAttribute('fill', e.color);
-    const t = g.querySelector('text');
-    t.setAttribute('x', G.mid.x); t.setAttribute('y', G.mid.y - (w / 2 + 6)); t.textContent = e.label || '';
-  });
-  for (const id in gEls) if (!live.has(id)) { gEls[id].remove(); delete gEls[id]; }
-
-  const se = sel && sel.type === 'edge' && edges.find(x => x.id === sel.id);
-  const SG = se && geo(se), on = !!SG;
-  $('#hS').classList.toggle('on', on); $('#hE').classList.toggle('on', on);
-  if (on) {
-    $('#hS').setAttribute('cx', SG.S.x); $('#hS').setAttribute('cy', SG.S.y);
-    $('#hE').setAttribute('cx', SG.E.x); $('#hE').setAttribute('cy', SG.E.y);
+    ln.setAttribute('d', d); ln.setAttribute('stroke', e.color);
+    ln.style.strokeWidth = hw; ln.style.strokeDasharray = dashFor(e.style, w);
+    const m = midOf(rc.pts), t = g.querySelector('text');
+    t.setAttribute('x', m.x); t.setAttribute('y', m.y - (w / 2 + 6)); t.textContent = e.label || '';
   }
+  for (const id in gEls) if (!live.has(id)) { gEls[id].remove(); delete gEls[id]; }
+  for (const id in routes) if (!live.has(id)) delete routes[id];
+
+  syncNodeEls();
+  nodes.forEach(n => {
+    const c = nEls[n.id], ce = edges.find(e => e.to === n.id) || edges.find(e => e.from === n.id);
+    c.setAttribute('cx', n.x); c.setAttribute('cy', n.y);
+    c.setAttribute('r', nodeR(n) + hoverK('node', n.id) * 3);
+    c.setAttribute('fill', ce ? ce.color : EDGE_DEFAULT);
+    c.classList.toggle('sel', !!sel && sel.id === n.id);
+  });
+
+  const E = sel && sel.type === 'edge' && ends[sel.id];
+  const showS = !!(E && E.A.box), showE = !!(E && E.B.box);
+  $('#hS').classList.toggle('on', showS); $('#hE').classList.toggle('on', showE);
+  if (showS) { $('#hS').setAttribute('cx', E.A.P.x); $('#hS').setAttribute('cy', E.A.P.y); }
+  if (showE) { $('#hE').setAttribute('cx', E.B.P.x); $('#hE').setAttribute('cy', E.B.P.y); }
   const sbx = sel && sel.type === 'box' && boxes.find(x => x.id === sel.id);
   const bon = !!(sbx && els[sbx.id]);
   document.querySelectorAll('.rsz').forEach(h => {
@@ -438,44 +615,109 @@ function drawEdges() {
     h.setAttribute('y', r.y + (c.includes('s') ? r.h : 0) - s / 2);
   });
 }
+
+/* ---------- picking (geometry-based, zoom-aware tolerances) ---------- */
+function pickAt(p, exclude) {
+  const zIn = 8 / view.z, zOut = 14 / view.z, zEdge = 12 / view.z, zNode = 8 / view.z;
+  for (const n of nodes) {
+    if (n.id === exclude) continue;
+    const d = Math.hypot(p.x - n.x, p.y - n.y), rr = nodeR(n) + zNode;
+    if (d <= rr) return {type: 'node', id: n.id, k: 1 - d / rr};
+  }
+  const order = boxes.filter(b => els[b.id] && b.id !== exclude)
+    .sort((a, b) => (+els[b.id].style.zIndex || 1) - (+els[a.id].style.zIndex || 1));
+  for (const b of order) {
+    const r = R(b);
+    if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) {
+      const d = Math.min(p.x - r.x, r.x + r.w - p.x, p.y - r.y, r.y + r.h - p.y);
+      return d <= zIn ? {type: 'border', id: b.id, k: .6 + .4 * (1 - d / zIn)} : {type: 'box', id: b.id};
+    }
+  }
+  let best = null;
+  for (const b of order) {
+    const r = R(b);
+    const dx = Math.max(r.x - p.x, 0, p.x - r.x - r.w), dy = Math.max(r.y - p.y, 0, p.y - r.y - r.h), d = Math.hypot(dx, dy);
+    if (d <= zOut && (!best || d < best.d)) best = {type: 'border', id: b.id, d, k: .6 * (1 - d / zOut)};
+  }
+  if (best) return best;
+  for (const e of edges) {
+    if (e.id === exclude || !routes[e.id]) continue;
+    const d = polyDist(p, routes[e.id].pts);
+    if (d <= zEdge && (!best || d < best.d)) best = {type: 'edge', id: e.id, d, k: 1 - d / zEdge};
+  }
+  return best;
+}
+function setHover(h) {
+  const prev = hover; hover = h && (h.type === 'border' || h.type === 'edge' || h.type === 'node') ? h : null;
+  if (prev && prev.type === 'border' && els[prev.id] && !(hover && hover.id === prev.id)) els[prev.id].style.removeProperty('--ring');
+  if (hover && hover.type === 'border' && els[hover.id]) els[hover.id].style.setProperty('--ring', (1 + 4 * hover.k).toFixed(2) + 'px');
+  if ((prev && prev.type !== 'border') || (hover && hover.type !== 'border')) scheduleDraw();
+}
+/* nearest grid point lying on an arrow's route (for splitting) */
+function gridPtOnRoute(eid, p) {
+  const rc = routes[eid], en = ends[eid]; if (!rc) return null;
+  const pts = rc.pts, onG = v => Math.abs(v / G - Math.round(v / G)) < 1e-6;
+  let best = null, bd = Infinity;
+  const consider = (x, y) => {
+    const f = pts[0], l = pts[pts.length - 1];
+    if (en && en.A.box && Math.abs(x - f.x) < .01 && Math.abs(y - f.y) < .01) return;
+    if (en && en.B.box && Math.abs(x - l.x) < .01 && Math.abs(y - l.y) < .01) return;
+    const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = {x, y}; }
+  };
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    if (Math.abs(a.y - b.y) < .01 && onG(a.y)) {
+      for (let x = Math.ceil(Math.min(a.x, b.x) / G) * G; x <= Math.max(a.x, b.x) + 1e-6; x += G) consider(x, a.y);
+    } else if (Math.abs(a.x - b.x) < .01 && onG(a.x)) {
+      for (let y = Math.ceil(Math.min(a.y, b.y) / G) * G; y <= Math.max(a.y, b.y) + 1e-6; y += G) consider(a.x, y);
+    }
+  }
+  return best;
+}
+/* split an arrow at a grid point -> node id (reuses an end node if the point is on it) */
+function splitEdge(eid, pt) {
+  const e = edges.find(x => x.id === eid); if (!e || !pt) return null;
+  for (const id of [e.from, e.to]) {
+    const n = nodes.find(x => x.id === id);
+    if (n && Math.abs(n.x - pt.x) < .01 && Math.abs(n.y - pt.y) < .01) return n.id;
+  }
+  const n = {id: uid(), x: pt.x, y: pt.y}; nodes.push(n);
+  edges.push({id: uid(), from: n.id, fa: null, to: e.to, ta: e.ta, color: e.color, w: e.w, style: e.style, mode: e.mode, label: ''});
+  e.to = n.id; e.ta = null;
+  syncNodeEls();
+  return n.id;
+}
+
+/* ---------- arrows: swap / label ---------- */
 function swapEdge() {
   if (!sel || sel.type !== 'edge') return;
   const e = edges.find(x => x.id === sel.id); if (!e) return;
-  const geo = makeGeo(), G = geo(e); if (!G) return;
-  let na;
-  if (geo.isBox(e.to)) {
-    const r = R(boxes.find(b => b.id === e.to));
-    na = {x: clamp01((G.E.x - r.x) / r.w), y: clamp01((G.E.y - r.y) / r.h)};
-  } else {
-    const H = geo(geo.edge(e.to));
-    na = {t: e.ta && e.ta.t != null ? e.ta.t : (H ? projT(G.S, H.S, H.E) : .5)};
-  }
-  const of = e.from, ofa = e.fa;
-  e.from = e.to; e.to = of; e.fa = na; e.ta = ofa;
-  drawEdges(); commit();
+  [e.from, e.to] = [e.to, e.from]; [e.fa, e.ta] = [e.ta, e.fa];
+  scheduleDraw(); commit();
 }
 function editLabel(e) {
-  const G = makeGeo()(e); if (!G) return;
+  const rc = routes[e.id]; if (!rc) return;
+  const m = midOf(rc.pts);
   const inp = document.createElement('input'); inp.className = 'edge-input'; inp.placeholder = 'label';
   inp.value = e.label || '';
-  inp.style.left = G.mid.x + 'px'; inp.style.top = G.mid.y + 'px';
+  inp.style.left = m.x + 'px'; inp.style.top = m.y + 'px';
   world.appendChild(inp); inp.focus(); inp.select();
   let done = false;
-  const fin = ok => { if (done) return; done = true; if (ok) e.label = inp.value.trim(); inp.remove(); drawEdges(); commit(); };
+  const fin = ok => { if (done) return; done = true; if (ok) e.label = inp.value.trim(); inp.remove(); scheduleDraw(); commit(); };
   inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') fin(true); if (ev.key === 'Escape') fin(false); ev.stopPropagation(); });
   inp.addEventListener('blur', () => fin(true));
 }
 
 /* ---------- selection / toolbar ---------- */
 function curItem() {
-  if (!sel) return null;
+  if (!sel || sel.type === 'node') return null;
   return sel.type === 'box' ? boxes.find(b => b.id === sel.id) : edges.find(e => e.id === sel.id);
 }
 function select(s) {
   sel = s;
   for (const id in els) els[id].classList.toggle('sel', !!s && s.type === 'box' && s.id === id);
-  if (s && s.type === 'box') els[s.id].style.zIndex = ++zTop;
-  drawEdges(); updBar();
+  if (s && s.type === 'box' && els[s.id]) els[s.id].style.zIndex = ++zTop;
+  scheduleDraw(); updBar();
 }
 function updBar() {
   $('#undo').disabled = hp <= 0;
@@ -484,9 +726,9 @@ function updBar() {
   const isE = !!sel && sel.type === 'edge';
   $('#swap').disabled = !isE;
   const it = curItem();
-  $('#ew').disabled = !isE; $('#es').disabled = !isE;
-  if (isE && it) { $('#ew').value = it.w || 3; $('#es').value = it.style || 'solid'; }
-  $('#target').textContent = !it ? '' : isE ? 'Arrow' : 'Box';
+  ['#ew', '#es', '#er'].forEach(s => $(s).disabled = !isE);
+  if (isE && it) { $('#ew').value = it.w || 3; $('#es').value = it.style || 'solid'; $('#er').value = it.mode || 'avoid'; }
+  $('#target').textContent = !sel ? '' : {edge: 'Arrow', box: 'Box', node: 'Node'}[sel.type];
   document.querySelectorAll('.sw').forEach(s => { s.classList.toggle('on', !!it && s.dataset.c === it.color); s.disabled = !it; s.style.opacity = it ? 1 : .35; });
   $('#custom').disabled = !it; if (it) $('#custom').value = it.color;
   $('#empty').hidden = boxes.length > 0;
@@ -495,8 +737,7 @@ function applyColor(c, final = true) {
   const it = curItem(); if (!it) return;
   it.color = c;
   if (sel.type === 'box') styleBox(it);
-  drawEdges(); if (final) commit(); else updBar();
-  if (final) updBar();
+  scheduleDraw(); if (final) commit(); else updBar();
 }
 PALETTE.forEach(c => {
   const b = document.createElement('button'); b.className = 'sw'; b.dataset.c = c; b.style.background = c; b.title = c;
@@ -504,56 +745,51 @@ PALETTE.forEach(c => {
 });
 $('#custom').addEventListener('input', e => applyColor(e.target.value, false));
 $('#custom').addEventListener('change', e => applyColor(e.target.value, true));
-$('#ew').addEventListener('input', e => { const it = curItem(); if (it && sel.type === 'edge') { it.w = +e.target.value; drawEdges(); } });
+const edgeSel = () => sel && sel.type === 'edge' ? edges.find(e => e.id === sel.id) : null;
+$('#ew').addEventListener('input', e => { const it = edgeSel(); if (it) { it.w = +e.target.value; scheduleDraw(); } });
 $('#ew').addEventListener('change', () => commit());
-$('#es').addEventListener('change', e => { const it = curItem(); if (it && sel.type === 'edge') { it.style = e.target.value; drawEdges(); commit(); } });
+$('#es').addEventListener('change', e => { const it = edgeSel(); if (it) { it.style = e.target.value; scheduleDraw(); commit(); } });
+$('#er').addEventListener('change', e => { const it = edgeSel(); if (it) { it.mode = e.target.value; scheduleDraw(); commit(); } });
 $('#undo').onclick = undo; $('#redo').onclick = redo;
-$('#del').onclick = delSel;
+$('#del').onclick = () => { if (sel) delObjs([sel.id]); };
 $('#swap').onclick = swapEdge;
 $('#reset').onclick = () => { view = {x: 0, y: 0, z: 1}; applyView(); };
-
-function delSel() {
-  if (!sel) return;
-  delObjs([sel.id]);
-}
 
 /* ---------- rebuild / load / save ---------- */
 function rebuild() {
   for (const id in els) { ro.unobserve(els[id]); els[id].remove(); delete els[id]; }
   for (const id in gEls) { gEls[id].remove(); delete gEls[id]; }
-  boxes.forEach(mkBox); drawEdges();
+  for (const id in nEls) { nEls[id].remove(); delete nEls[id]; }
+  routes = {};
+  boxes.forEach(mkBox); syncNodeEls(); scheduleDraw();
 }
 function load(d) {
   if (!d || !Array.isArray(d.boxes)) throw new Error('bad');
   const okc = c => /^#[0-9a-f]{6}$/i.test(c);
   boxes = d.boxes.map(b => ({
-    id: String(b.id || uid()), x: +b.x || 0, y: +b.y || 0, w: +b.w || 150, h: +b.h || 64,
+    id: String(b.id || uid()), x: snapG(+b.x || 0), y: snapG(+b.y || 0),
+    w: Math.max(120, snapG(+b.w || 160)), h: Math.max(40, snapG(+b.h || 60)),
     title: String(b.title || 'Untitled'), color: okc(b.color) ? b.color : '#2b3140',
     lines: Array.isArray(b.lines) ? b.lines.map(String) : [], collapsed: !!b.collapsed
   }));
-  const raw = (Array.isArray(d.edges) ? d.edges : []).map(e => ({...e, id: String(e.id || uid())}));
-  const boxIds = new Set(boxes.map(b => b.id)), all = new Set([...boxIds, ...raw.map(e => e.id)]);
-  const anc = (a, isBox, fx, fy) => {
-    if (a && typeof a === 'object') {
-      if (isBox) return {x: clamp01(+a.x || 0), y: clamp01(+a.y || 0)};
-      return {t: clamp01(a.t != null ? +a.t : .5)};
-    }
-    if (isBox && fx != null) return {x: clamp01(+fx || 0), y: clamp01(+fy || 0)};
-    return isBox ? {x: 0, y: 0} : {t: .5};
+  nodes = (Array.isArray(d.nodes) ? d.nodes : []).map(n => ({id: String(n.id || uid()), x: snapG(+n.x || 0), y: snapG(+n.y || 0)}));
+  const ids = new Set([...boxes.map(b => b.id), ...nodes.map(n => n.id)]), boxIds = new Set(boxes.map(b => b.id));
+  const anc = (a, fx, fy) => {
+    if (a && typeof a === 'object' && a.x != null) return {x: clamp01(+a.x || 0), y: clamp01(+a.y || 0)};
+    if (fx != null) return {x: clamp01(+fx || 0), y: clamp01(+fy || 0)};
+    return null;
   };
-  edges = raw.filter(e => all.has(e.from) && all.has(e.to) && e.from !== e.id && e.to !== e.id).map(e => {
-    const fb = boxIds.has(e.from), tb = boxIds.has(e.to);
-    const hasTa = (e.ta && typeof e.ta === 'object') || e.tx != null;
-    return {
-      id: e.id, from: e.from, to: e.to,
-      fa: anc(e.fa, fb, e.fx, e.fy),
-      ta: hasTa ? anc(e.ta, tb, e.tx, e.ty) : null,
-      color: okc(e.color) ? e.color : EDGE_DEFAULT, label: String(e.label || ''),
-      w: Math.min(12, Math.max(1, +e.w || 3)), style: ['solid', 'dashed', 'dotted'].includes(e.style) ? e.style : 'solid'
-    };
-  });
+  // older files: arrows attached to other arrows are dropped (the node model replaces them)
+  edges = (Array.isArray(d.edges) ? d.edges : []).filter(e => ids.has(e.from) && ids.has(e.to)).map(e => ({
+    id: String(e.id || uid()), from: e.from, to: e.to,
+    fa: boxIds.has(e.from) ? anc(e.fa, e.fx, e.fy) : null,
+    ta: boxIds.has(e.to) ? anc(e.ta, e.tx, e.ty) : null,
+    color: okc(e.color) ? e.color : EDGE_DEFAULT, label: String(e.label || ''),
+    w: Math.min(12, Math.max(1, +e.w || 3)), style: ['solid', 'dashed', 'dotted'].includes(e.style) ? e.style : 'solid',
+    mode: e.mode === 'direct' ? 'direct' : 'avoid'
+  }));
   if (d.view && isFinite(d.view.z) && d.view.z > 0) view = {x: +d.view.x || 0, y: +d.view.y || 0, z: +d.view.z};
-  sel = null; rebuild(); applyView(); updBar();
+  sel = null; rebuild(); normalize(); applyView(); updBar();
 }
 $('#save').onclick = () => {
   const blob = new Blob([JSON.stringify({...JSON.parse(snap()), view}, null, 2)], {type: 'application/json'});
@@ -568,13 +804,13 @@ $('#file').onchange = async ev => {
 };
 
 /* ---------- mouse ---------- */
-function edgeZone(boxEl, cx, cy) {
-  const r = boxEl.getBoundingClientRect(), z = view.z;
-  const lx = (cx - r.left) / z, ly = (cy - r.top) / z, w = r.width / z, h = r.height / z;
-  const d = [lx, w - lx, ly, h - ly], m = Math.min(...d);
-  return {near: m <= Math.max(EDGE_ZONE, 5 / z), side: d.indexOf(m), lx, ly, w, h};
-}
 const blurActive = () => { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); };
+function markDrops(tg) {
+  const id = tg ? tg.id : null;
+  for (const k in els) els[k].classList.toggle('drop', !!tg && (tg.type === 'box' || tg.type === 'border') && k === id);
+  for (const k in gEls) gEls[k].classList.toggle('drop', !!tg && tg.type === 'edge' && k === id);
+  for (const k in nEls) nEls[k].classList.toggle('drop', !!tg && tg.type === 'node' && k === id);
+}
 
 stage.addEventListener('contextmenu', e => e.preventDefault());
 stage.addEventListener('mousedown', e => {
@@ -599,101 +835,107 @@ stage.addEventListener('mousedown', e => {
     drag = {t: 'handle', which: e.target.dataset.w, id: sel.id, moved: false};
     document.body.style.cursor = 'grabbing'; return;
   }
-  const boxEl = e.target.closest('.box');
-  if (boxEl) {
-    const b = boxes.find(x => x.id === boxEl.dataset.id);
+  const p = toWorld(e.clientX, e.clientY), pk = pickAt(p);
+  setHover(null);
+  if (pk && pk.type === 'node') {
+    e.preventDefault(); blurActive();
+    const n = nodes.find(x => x.id === pk.id);
+    select({type: 'node', id: n.id});
+    drag = {t: 'node', n, ox: n.x - p.x, oy: n.y - p.y, moved: false};
+    return;
+  }
+  if (pk && pk.type === 'border') {
+    e.preventDefault(); blurActive();
+    const b = boxes.find(x => x.id === pk.id);
     select({type: 'box', id: b.id});
-    const z = edgeZone(boxEl, e.clientX, e.clientY);
-    if (z.near) {
-      e.preventDefault(); blurActive();
-      let fx = clamp01(z.lx / z.w), fy = clamp01(z.ly / z.h);
-      if (z.side === 0) fx = 0; else if (z.side === 1) fx = 1; else if (z.side === 2) fy = 0; else fy = 1;
-      drag = {t: 'link', from: b.id, fa: {x: fx, y: fy}, sx: e.clientX, sy: e.clientY, moved: false};
-      document.body.classList.add('linking'); document.body.style.cursor = 'crosshair'; return;
-    }
+    drag = {t: 'link', src: {type: 'box', id: b.id, fa: snapBorder(R(b), p)}, sx: e.clientX, sy: e.clientY, moved: false};
+    document.body.classList.add('linking'); document.body.style.cursor = 'crosshair';
+    return;
+  }
+  if (pk && pk.type === 'box') {
+    const b = boxes.find(x => x.id === pk.id);
+    select({type: 'box', id: b.id});
     if (e.target.isContentEditable || e.target.closest('.x,.addline')) return;
     e.preventDefault(); blurActive();
     drag = {t: 'move', b, ox: b.x, oy: b.y, sx: e.clientX, sy: e.clientY, moved: false};
     return;
   }
-  const eg = e.target.closest('.edge');
-  if (eg) {
+  if (pk && pk.type === 'edge') {
     e.preventDefault(); blurActive();
-    const ed = edges.find(x => x.id === eg.dataset.id); if (!ed) return;
-    select({type: 'edge', id: ed.id});
-    const G = makeGeo()(ed);
-    if (G) {
-      drag = {t: 'link', from: ed.id, fa: {t: projT(toWorld(e.clientX, e.clientY), G.S, G.E)}, sx: e.clientX, sy: e.clientY, moved: false};
+    select({type: 'edge', id: pk.id});
+    const pt = gridPtOnRoute(pk.id, p);
+    if (pt) {
+      drag = {t: 'link', src: {type: 'edge', id: pk.id, pt}, sx: e.clientX, sy: e.clientY, moved: false};
       document.body.classList.add('linking');
     }
     return;
   }
   e.preventDefault(); blurActive();
   select(null);
-  drag = {t: 'new', p: toWorld(e.clientX, e.clientY), sx: e.clientX, sy: e.clientY};
+  drag = {t: 'new', p, sx: e.clientX, sy: e.clientY};
 });
 
-function dropTarget(e, fromId) {
-  const t = document.elementFromPoint(e.clientX, e.clientY);
-  const tb = t && t.closest && t.closest('.box');
-  const te = !tb && t && t.closest && t.closest('.edge');
-  return {
-    box: tb && tb.dataset.id !== fromId ? tb.dataset.id : null,
-    edge: te && te.dataset.id !== fromId ? te.dataset.id : null
-  };
-}
-function markDrops(tg) {
-  for (const id in els) els[id].classList.toggle('drop', tg.box === id);
-  for (const id in gEls) gEls[id].classList.toggle('drop', tg.edge === id);
+function srcPoint(src) {
+  if (src.type === 'box') { const b = boxes.find(x => x.id === src.id); return b && els[b.id] ? anchorPt(R(b), src.fa) : null; }
+  return src.pt;
 }
 
 window.addEventListener('mousemove', e => {
   if (!drag) {
-    const be = e.target.closest && e.target.closest('.box');
-    if (be) be.style.cursor = edgeZone(be, e.clientX, e.clientY).near ? 'crosshair' : '';
+    if (e.target.closest && (e.target.closest('#bar') || e.target.closest('.edge-input'))) { setHover(null); return; }
+    const pk = (e.target.classList && (e.target.classList.contains('hnd') || e.target.classList.contains('rsz'))) ? null : pickAt(toWorld(e.clientX, e.clientY));
+    setHover(pk);
+    stage.style.cursor = space ? 'grab' : pk && (pk.type === 'border' || pk.type === 'edge') ? 'crosshair' : pk && pk.type === 'node' ? 'move' : '';
     return;
   }
+  const p = toWorld(e.clientX, e.clientY);
   if (drag.t === 'pan') {
     view.x = drag.vx + e.clientX - drag.sx; view.y = drag.vy + e.clientY - drag.sy; applyView();
   } else if (drag.t === 'move') {
-    const dx = (e.clientX - drag.sx) / view.z, dy = (e.clientY - drag.sy) / view.z;
     if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 3) drag.moved = true;
     if (drag.moved) {
-      drag.b.x = drag.ox + dx; drag.b.y = drag.oy + dy;
-      els[drag.b.id].style.left = drag.b.x + 'px'; els[drag.b.id].style.top = drag.b.y + 'px';
-      drawEdges();
+      const b = drag.b;
+      b.x = snapG(drag.ox + (e.clientX - drag.sx) / view.z); b.y = snapG(drag.oy + (e.clientY - drag.sy) / view.z);
+      els[b.id].style.left = b.x + 'px'; els[b.id].style.top = b.y + 'px';
+      scheduleDraw();
     }
+  } else if (drag.t === 'node') {
+    const nx = snapG(p.x + drag.ox), ny = snapG(p.y + drag.oy);
+    if (nx !== drag.n.x || ny !== drag.n.y) { drag.n.x = nx; drag.n.y = ny; drag.moved = true; scheduleDraw(); }
   } else if (drag.t === 'new') {
-    const c = toWorld(e.clientX, e.clientY);
+    const c = {x: snapG(p.x), y: snapG(p.y)}, s = {x: snapG(drag.p.x), y: snapG(drag.p.y)};
     Object.assign(rb.style, {
-      display: 'block', left: Math.min(drag.p.x, c.x) + 'px', top: Math.min(drag.p.y, c.y) + 'px',
-      width: Math.abs(c.x - drag.p.x) + 'px', height: Math.abs(c.y - drag.p.y) + 'px'
+      display: 'block', left: Math.min(s.x, c.x) + 'px', top: Math.min(s.y, c.y) + 'px',
+      width: Math.abs(c.x - s.x) + 'px', height: Math.abs(c.y - s.y) + 'px'
     });
   } else if (drag.t === 'resize') {
-    const p = toWorld(e.clientX, e.clientY), c = drag.c, MINW = 120, b = drag.b;
+    const c = drag.c, MINW = 120, b = drag.b;
     let l = drag.sx, t = drag.sy, r = drag.sx + drag.sw, bt = drag.sy + drag.sh;
-    if (c.includes('w')) l = Math.min(p.x, r - MINW); else r = Math.max(p.x, l + MINW);
+    if (c.includes('w')) l = Math.min(snapG(p.x), snapG(r - MINW)); else r = Math.max(snapG(p.x), l + Math.ceil(MINW / G) * G);
     if (!b.collapsed) {
-      if (c.includes('n')) t = Math.min(p.y, bt - drag.minH); else bt = Math.max(p.y, t + drag.minH);
+      const mh = Math.ceil(drag.minH / G) * G;
+      if (c.includes('n')) t = Math.min(snapG(p.y), bt - mh); else bt = Math.max(snapG(p.y), t + mh);
       b.h = bt - t;
-    } else if (c.includes('n')) t = drag.sy;
+    }
     Object.assign(b, {x: l, y: t, w: r - l});
-    styleBox(b); drag.moved = true; drawEdges();
+    styleBox(b); drag.moved = true; scheduleDraw();
   } else if (drag.t === 'handle') {
     const ed = edges.find(x => x.id === drag.id); if (!ed) return;
-    const geo = makeGeo(), a = slideAnchor(geo, drag.which === 's' ? ed.from : ed.to, toWorld(e.clientX, e.clientY));
-    if (!a) return;
+    const id = drag.which === 's' ? ed.from : ed.to, b = boxes.find(x => x.id === id);
+    if (!b || !els[b.id]) return;
+    const a = snapBorder(R(b), p);
     if (drag.which === 's') ed.fa = a; else ed.ta = a;
-    drag.moved = true; drawEdges();
+    drag.moved = true; scheduleDraw();
   } else if (drag.t === 'link') {
     if (!drag.moved) {
       if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 4) return;
-      drag.moved = true; tmp = S('path', {class: 'tmp'}); svg.appendChild(tmp);
+      drag.moved = true; tmp = S('path', {class: 'tmp'}); eg.appendChild(tmp);
     }
-    const sp = makeGeo().pt(drag.from, drag.fa); if (!sp) return;
-    const c = toWorld(e.clientX, e.clientY);
-    tmp.setAttribute('d', `M${sp.x} ${sp.y}L${c.x} ${c.y}`);
-    markDrops(dropTarget(e, drag.from));
+    const sp = srcPoint(drag.src); if (!sp) return;
+    tmp.setAttribute('d', `M${sp.x} ${sp.y}L${p.x} ${p.y}`);
+    const tg = pickAt(p, drag.src.id);
+    drag.tg = tg && tg.type !== 'edge' && tg.type !== 'node' && tg.type !== 'box' && tg.type !== 'border' ? null : tg;
+    markDrops(drag.tg); setHover(drag.tg);
   }
 });
 
@@ -702,14 +944,15 @@ window.addEventListener('mouseup', e => {
   const d = drag; drag = null;
   stage.style.cursor = space ? 'grab' : ''; document.body.style.cursor = '';
   document.body.classList.remove('linking');
-  if ((d.t === 'move' || d.t === 'handle' || d.t === 'resize') && d.moved) commit();
+  if ((d.t === 'move' || d.t === 'handle' || d.t === 'resize' || d.t === 'node') && d.moved) commit();
   else if (d.t === 'new') {
     rb.style.display = 'none';
     if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 10) return;
     const c = toWorld(e.clientX, e.clientY);
+    const x1 = snapG(Math.min(d.p.x, c.x)), y1 = snapG(Math.min(d.p.y, c.y));
+    const x2 = snapG(Math.max(d.p.x, c.x)), y2 = snapG(Math.max(d.p.y, c.y));
     const b = {
-      id: uid(), x: Math.min(d.p.x, c.x), y: Math.min(d.p.y, c.y),
-      w: Math.max(Math.abs(c.x - d.p.x), 150), h: Math.max(Math.abs(c.y - d.p.y), 64),
+      id: uid(), x: x1, y: y1, w: Math.max(x2 - x1, 160), h: Math.max(y2 - y1, 60),
       title: '', color: defaultBoxColor(), lines: [], collapsed: false
     };
     boxes.push(b); mkBox(b); els[b.id].dataset.fresh = '1';
@@ -717,17 +960,25 @@ window.addEventListener('mouseup', e => {
     setTimeout(() => editTitle(b), 0);
   } else if (d.t === 'link') {
     if (tmp) { tmp.remove(); tmp = null; }
-    markDrops({});
-    if (!d.moved) return;
-    const tg = dropTarget(e, d.from);
-    let to = null, ta = null;
-    if (tg.box) to = tg.box;
-    else if (tg.edge) {
-      const geo = makeGeo(), oe = geo.edge(tg.edge), G = oe && geo(oe);
-      if (G) { to = tg.edge; ta = {t: projT(toWorld(e.clientX, e.clientY), G.S, G.E)}; }
-    }
-    if (!to) return;
-    const ed = {id: uid(), from: d.from, to, fa: d.fa, ta, color: EDGE_DEFAULT, label: '', w: 3, style: 'solid'};
+    markDrops(null); setHover(null);
+    if (!d.moved || !d.tg) return;
+    const p = toWorld(e.clientX, e.clientY), tg = d.tg;
+    // resolve target first (uses current routes), then source
+    let tgtPt = null;
+    if (tg.type === 'edge') { tgtPt = gridPtOnRoute(tg.id, p); if (!tgtPt) return; }
+    let fromId, fa = null;
+    if (d.src.type === 'box') { fromId = d.src.id; fa = d.src.fa; }
+    else fromId = splitEdge(d.src.id, d.src.pt);
+    if (!fromId) return;
+    let toId, ta = null;
+    if (tg.type === 'box' || tg.type === 'border') {
+      toId = tg.id;
+      const tb = boxes.find(x => x.id === toId), fp = d.src.type === 'box' ? srcPoint(d.src) : nodes.find(n => n.id === fromId);
+      ta = facing(R(tb), fp);
+    } else if (tg.type === 'node') toId = tg.id;
+    else toId = splitEdge(tg.id, tgtPt);
+    if (!toId || toId === fromId) { commit(); return; }
+    const ed = {id: uid(), from: fromId, fa, to: toId, ta, color: EDGE_DEFAULT, label: '', w: 3, style: 'solid', mode: 'avoid'};
     edges.push(ed); select({type: 'edge', id: ed.id}); commit();
   }
 });
@@ -743,8 +994,8 @@ stage.addEventListener('wheel', e => {
 stage.addEventListener('dblclick', e => {
   const t = e.target.closest('.title');
   if (t) { const b = boxes.find(x => x.id === t.closest('.box').dataset.id); if (b) editTitle(b); return; }
-  const g = e.target.closest('.edge');
-  if (g) { const ed = edges.find(x => x.id === g.dataset.id); if (ed) editLabel(ed); }
+  const pk = pickAt(toWorld(e.clientX, e.clientY));
+  if (pk && pk.type === 'edge') { const ed = edges.find(x => x.id === pk.id); if (ed) editLabel(ed); }
 });
 
 window.addEventListener('keydown', e => {
@@ -753,8 +1004,8 @@ window.addEventListener('keydown', e => {
   const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   if (mod && k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
   else if (mod && k === 'y') { e.preventDefault(); redo(); }
-  else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); delSel(); }
-  else if (e.key === 'Enter' && sel && sel.type === 'edge') { const ed = curItem(); if (ed) editLabel(ed); }
+  else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); if (sel) delObjs([sel.id]); }
+  else if (e.key === 'Enter' && sel && sel.type === 'edge') { const ed = edgeSel(); if (ed) editLabel(ed); }
   else if (e.key === 'Escape') select(null);
 });
 window.addEventListener('keyup', e => { if (e.code === 'Space') { space = false; if (!drag) stage.style.cursor = ''; } });
@@ -762,10 +1013,12 @@ window.addEventListener('keyup', e => { if (e.code === 'Space') { space = false;
 /* ---------- init ---------- */
 applyTheme();
 try {
-  const raw = localStorage.getItem(KEY) || localStorage.getItem(OLDKEY);
+  let raw = localStorage.getItem(KEY);
+  for (const k of OLDKEYS) if (!raw) raw = localStorage.getItem(k);
   if (raw) load(JSON.parse(raw));
-} catch (_) { boxes = []; edges = []; }
+} catch (_) { boxes = []; nodes = []; edges = []; }
 applyView(); commit(); updBar();
+window.__ideamap = {get boxes() { return boxes; }, get nodes() { return nodes; }, get edges() { return edges; }, get routes() { return routes; }};
 })();
 </script>
 </body>
