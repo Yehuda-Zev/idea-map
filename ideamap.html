@@ -26,6 +26,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .addline{margin-top:4px;font-size:12px;text-align:center;opacity:0;cursor:pointer;padding:1px;border-radius:4px;
   border:1px dashed color-mix(in srgb,currentColor 40%,transparent)}
 .box:hover .addline,.box.sel .addline{opacity:.7}
+#handles{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none;z-index:1000000}
+.hnd{display:none;r:calc(7px*var(--k,1));fill:#fff;stroke:var(--acc);stroke-width:2.5;cursor:grab;pointer-events:all}
+.hnd.on{display:block}
+.rsz{display:none;fill:#fff;stroke:var(--acc);stroke-width:2;pointer-events:all}
+.rsz.on{display:block}
+.rsz[data-c=nw],.rsz[data-c=se]{cursor:nwse-resize}
+.rsz[data-c=ne],.rsz[data-c=sw]{cursor:nesw-resize}
 .edge .line{fill:none;stroke-width:2.5;stroke-linecap:round}
 .edge .hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
 .edge .halo{fill:none;stroke:var(--acc);stroke-width:9;opacity:0;stroke-linecap:round}
@@ -54,6 +61,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 <div id="stage">
   <div id="world">
     <svg id="edges"></svg>
+    <svg id="handles"><circle class="hnd" id="hS" data-w="s"></circle><circle class="hnd" id="hE" data-w="e"></circle><rect class="rsz" data-c="nw"></rect><rect class="rsz" data-c="ne"></rect><rect class="rsz" data-c="sw"></rect><rect class="rsz" data-c="se"></rect></svg>
     <div class="rb" id="rb"></div>
   </div>
 </div>
@@ -67,12 +75,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
   <span id="target"></span>
   <span class="sep"></span>
   <button id="del">Delete</button>
+  <button id="swap" title="Reverse arrow direction">&#8644; Swap</button>
   <button id="save">Save</button>
   <button id="load">Load</button>
   <button id="reset">Reset view</button>
   <input type="file" id="file" accept=".json,application/json" hidden>
 </div>
-<div id="hint">Drag empty space: new box &middot; Drag a box border: arrow &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Double-click: rename title / arrow label &middot; Del: delete</div>
+<div id="hint">Drag empty space: new box &middot; Drag a box border: arrow &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Select a box: drag corner squares to resize &middot; Select an arrow: drag end dots along borders, Swap reverses it &middot; Double-click: rename title / arrow label &middot; Del: delete</div>
 
 <script>
 (() => {
@@ -144,6 +153,8 @@ function applyView() {
   stage.style.backgroundSize = `${24*view.z}px ${24*view.z}px`;
   stage.style.backgroundPosition = `${view.x}px ${view.y}px`;
   clearTimeout(vtm); vtm = setTimeout(persist, 400);
+  $('#handles').style.setProperty('--k', 1 / view.z);
+  drawEdges();
 }
 
 /* ---------- boxes ---------- */
@@ -234,7 +245,8 @@ function geom(e, a, b) {
   const C = {x: rb2.x + rb2.w / 2, y: rb2.y + rb2.h / 2};
   const dx = Sp.x - C.x, dy = Sp.y - C.y;
   let E;
-  if ((Math.abs(dx) < rb2.w / 2 && Math.abs(dy) < rb2.h / 2) || (!dx && !dy)) E = C;
+  if (e.tx != null && e.ty != null) E = {x: rb2.x + e.tx * rb2.w, y: rb2.y + e.ty * rb2.h};
+  else if ((Math.abs(dx) < rb2.w / 2 && Math.abs(dy) < rb2.h / 2) || (!dx && !dy)) E = C;
   else {
     const t = Math.min(dx ? rb2.w / 2 / Math.abs(dx) : Infinity, dy ? rb2.h / 2 / Math.abs(dy) : Infinity);
     E = {x: C.x + dx * t, y: C.y + dy * t};
@@ -273,6 +285,43 @@ function drawEdges() {
     const t = g.querySelector('text'); t.setAttribute('x', G.mid.x); t.setAttribute('y', G.mid.y - 7); t.textContent = e.label || '';
   });
   for (const id in gEls) if (!live.has(id)) { gEls[id].remove(); delete gEls[id]; }
+  const se = sel && sel.type === 'edge' && edges.find(x => x.id === sel.id);
+  const sa = se && boxes.find(x => x.id === se.from), sb = se && boxes.find(x => x.id === se.to);
+  const on = !!(se && sa && sb && els[sa.id] && els[sb.id]);
+  $('#hS').classList.toggle('on', on); $('#hE').classList.toggle('on', on);
+  if (on) {
+    const G = geom(se, sa, sb);
+    $('#hS').setAttribute('cx', G.S.x); $('#hS').setAttribute('cy', G.S.y);
+    $('#hE').setAttribute('cx', G.E.x); $('#hE').setAttribute('cy', G.E.y);
+  }
+  const sbx = sel && sel.type === 'box' && boxes.find(x => x.id === sel.id);
+  const bon = !!(sbx && els[sbx.id]);
+  document.querySelectorAll('.rsz').forEach(h => {
+    h.classList.toggle('on', bon);
+    if (!bon) return;
+    const r = R(sbx), s = 10 / view.z, c = h.dataset.c;
+    h.setAttribute('width', s); h.setAttribute('height', s);
+    h.setAttribute('x', r.x + (c.includes('e') ? r.w : 0) - s / 2);
+    h.setAttribute('y', r.y + (c.includes('s') ? r.h : 0) - s / 2);
+  });
+}
+function swapEdge() {
+  if (!sel || sel.type !== 'edge') return;
+  const e = edges.find(x => x.id === sel.id); if (!e) return;
+  const a = boxes.find(x => x.id === e.from), b = boxes.find(x => x.id === e.to);
+  if (!a || !b) return;
+  const G = geom(e, a, b), rb2 = R(b);
+  const nfx = Math.min(1, Math.max(0, (G.E.x - rb2.x) / rb2.w)), nfy = Math.min(1, Math.max(0, (G.E.y - rb2.y) / rb2.h));
+  const ntx = e.fx, nty = e.fy;
+  e.from = b.id; e.to = a.id; e.fx = nfx; e.fy = nfy; e.tx = ntx; e.ty = nty;
+  drawEdges(); commit();
+}
+function snapBorder(r, p) {
+  const x = Math.min(r.x + r.w, Math.max(r.x, p.x)), y = Math.min(r.y + r.h, Math.max(r.y, p.y));
+  const d = [x - r.x, r.x + r.w - x, y - r.y, r.y + r.h - y], i = d.indexOf(Math.min(...d));
+  let fx = (x - r.x) / r.w, fy = (y - r.y) / r.h;
+  if (i === 0) fx = 0; else if (i === 1) fx = 1; else if (i === 2) fy = 0; else fy = 1;
+  return {x: fx, y: fy};
 }
 function editLabel(e) {
   const a = boxes.find(x => x.id === e.from), b = boxes.find(x => x.id === e.to);
@@ -298,12 +347,13 @@ function select(s) {
   for (const id in els) els[id].classList.toggle('sel', !!s && s.type === 'box' && s.id === id);
   if (s && s.type === 'box') els[s.id].style.zIndex = ++zTop;
   for (const id in gEls) gEls[id].classList.toggle('sel', !!s && s.type === 'edge' && s.id === id);
-  updBar();
+  drawEdges(); updBar();
 }
 function updBar() {
   $('#undo').disabled = hp <= 0;
   $('#redo').disabled = hp >= hist.length - 1;
   $('#del').disabled = !sel;
+  $('#swap').disabled = !(sel && sel.type === 'edge');
   const it = curItem();
   $('#target').textContent = !it ? 'Select a box or arrow to color it' : sel.type === 'box' ? 'Box color' : 'Arrow color';
   document.querySelectorAll('.sw').forEach(s => { s.classList.toggle('on', !!it && s.dataset.c === it.color); s.disabled = !it; s.style.opacity = it ? 1 : .35; });
@@ -325,6 +375,7 @@ $('#custom').addEventListener('input', e => applyColor(e.target.value, false));
 $('#custom').addEventListener('change', e => applyColor(e.target.value, true));
 $('#undo').onclick = undo; $('#redo').onclick = redo;
 $('#del').onclick = delSel;
+$('#swap').onclick = swapEdge;
 $('#reset').onclick = () => { view = {x: 0, y: 0, z: 1}; applyView(); };
 
 function delSel() {
@@ -351,6 +402,7 @@ function load(d) {
   const ids = new Set(boxes.map(b => b.id));
   edges = (Array.isArray(d.edges) ? d.edges : []).filter(e => ids.has(e.from) && ids.has(e.to)).map(e => ({
     id: String(e.id || uid()), from: e.from, to: e.to, fx: +e.fx || 0, fy: +e.fy || 0,
+    tx: e.tx == null ? undefined : +e.tx, ty: e.ty == null ? undefined : +e.ty,
     color: okc(e.color) ? e.color : EDGE_DEFAULT, label: String(e.label || '')
   }));
   if (d.view && isFinite(d.view.z) && d.view.z > 0) view = {x: +d.view.x || 0, y: +d.view.y || 0, z: +d.view.z};
@@ -386,6 +438,19 @@ stage.addEventListener('mousedown', e => {
     stage.style.cursor = 'grabbing'; return;
   }
   if (e.button !== 0) return;
+  if (e.target.classList && e.target.classList.contains('rsz') && sel && sel.type === 'box') {
+    e.preventDefault();
+    const b = boxes.find(x => x.id === sel.id), el = els[b.id], r = R(b);
+    const prev = el.style.minHeight; el.style.minHeight = '0px';
+    const ch = Math.max(40, el.offsetHeight); el.style.minHeight = prev;
+    drag = {t: 'resize', c: e.target.dataset.c, b, sx: b.x, sy: b.y, sw: r.w, sh: r.h, minH: ch, moved: false};
+    return;
+  }
+  if (e.target.classList && e.target.classList.contains('hnd') && sel && sel.type === 'edge') {
+    e.preventDefault();
+    drag = {t: 'handle', which: e.target.dataset.w, id: sel.id, moved: false};
+    document.body.style.cursor = 'grabbing'; return;
+  }
   const boxEl = e.target.closest('.box');
   if (boxEl) {
     const b = boxes.find(x => x.id === boxEl.dataset.id);
@@ -437,6 +502,19 @@ window.addEventListener('mousemove', e => {
       display: 'block', left: Math.min(drag.p.x, c.x) + 'px', top: Math.min(drag.p.y, c.y) + 'px',
       width: Math.abs(c.x - drag.p.x) + 'px', height: Math.abs(c.y - drag.p.y) + 'px'
     });
+  } else if (drag.t === 'resize') {
+    const p = toWorld(e.clientX, e.clientY), c = drag.c, MINW = 120;
+    let l = drag.sx, t = drag.sy, r = drag.sx + drag.sw, bt = drag.sy + drag.sh;
+    if (c.includes('w')) l = Math.min(p.x, r - MINW); else r = Math.max(p.x, l + MINW);
+    if (c.includes('n')) t = Math.min(p.y, bt - drag.minH); else bt = Math.max(p.y, t + drag.minH);
+    Object.assign(drag.b, {x: l, y: t, w: r - l, h: bt - t});
+    styleBox(drag.b); drag.moved = true; drawEdges();
+  } else if (drag.t === 'handle') {
+    const ed = edges.find(x => x.id === drag.id); if (!ed) return;
+    const bx = boxes.find(x => x.id === (drag.which === 's' ? ed.from : ed.to));
+    const f = snapBorder(R(bx), toWorld(e.clientX, e.clientY));
+    if (drag.which === 's') { ed.fx = f.x; ed.fy = f.y; } else { ed.tx = f.x; ed.ty = f.y; }
+    drag.moved = true; drawEdges();
   } else if (drag.t === 'link') {
     const a = boxes.find(x => x.id === drag.from), r = R(a), c = toWorld(e.clientX, e.clientY);
     tmp.setAttribute('d', `M${r.x + drag.fx * r.w} ${r.y + drag.fy * r.h}L${c.x} ${c.y}`);
@@ -449,7 +527,7 @@ window.addEventListener('mouseup', e => {
   if (!drag) return;
   const d = drag; drag = null;
   stage.style.cursor = space ? 'grab' : ''; document.body.style.cursor = '';
-  if (d.t === 'move' && d.moved) commit();
+  if ((d.t === 'move' || d.t === 'handle' || d.t === 'resize') && d.moved) commit();
   else if (d.t === 'new') {
     rb.style.display = 'none';
     if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 10) return;
