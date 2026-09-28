@@ -3,21 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>Idea Map</title>
 <style>
-:root{--bg:#14161a;--panel:#1e2128;--line:#2f343d;--txt:#e6e8ec;--acc:#5b9dff}
+:root{color-scheme:light;--bg:#f4f5f7;--panel:#fff;--line:#d5d9e0;--txt:#1b1f27;--acc:#2f6fed;--dot:#cfd4dc;--btn:#eef0f4;--btnh:#e1e5ec;--shadow:rgba(20,30,50,.18);--ok:#16a34a}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){color-scheme:dark;--bg:#14161a;--panel:#1e2128;--line:#2f343d;--txt:#e6e8ec;--acc:#5b9dff;--dot:#2a2e36;--btn:#2a2f39;--btnh:#343b48;--shadow:rgba(0,0,0,.4);--ok:#7cfc9a}
+}
+:root[data-theme=dark]{color-scheme:dark;--bg:#14161a;--panel:#1e2128;--line:#2f343d;--txt:#e6e8ec;--acc:#5b9dff;--dot:#2a2e36;--btn:#2a2f39;--btnh:#343b48;--shadow:rgba(0,0,0,.4);--ok:#7cfc9a}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif}
-#stage{position:fixed;inset:0;background-image:radial-gradient(#2a2e36 1.2px,transparent 1.2px);background-size:24px 24px;-webkit-user-select:none;user-select:none}
+#stage{position:fixed;inset:0;background-image:radial-gradient(var(--dot) 1.2px,transparent 1.2px);background-size:24px 24px;-webkit-user-select:none;user-select:none}
 #world{position:absolute;left:0;top:0;transform-origin:0 0}
 #edges{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none;z-index:0}
 .box{position:absolute;min-width:120px;padding:10px;z-index:1;border-radius:10px;
-  border:2px solid color-mix(in srgb,currentColor 25%,transparent);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+  border:2px solid color-mix(in srgb,currentColor 25%,transparent);box-shadow:0 4px 14px var(--shadow)}
 .box.sel{outline:2px solid var(--acc);outline-offset:3px}
-.box.drop{outline:2px dashed #7cfc9a;outline-offset:3px}
+.box.drop{outline:2px dashed var(--ok);outline-offset:3px}
 .title,.ltxt{-webkit-user-select:text;user-select:text;outline:none;word-break:break-word}
-.title{font-weight:600;padding:2px 4px;margin:-2px -4px 4px;border-radius:4px;min-height:1.6em;cursor:move}
+.title{font-weight:600;padding:2px 4px;margin:-2px 18px 4px -4px;border-radius:4px;min-height:1.6em;cursor:move}
 .title:empty::before{content:attr(data-ph);opacity:.5}
+.box.col .title{margin-bottom:-2px}
+.box.col .title[data-n]::after{content:"  +" attr(data-n);opacity:.6;font-weight:400}
+.box.col .lines,.box.col .addline{display:none}
 .title:focus,.ltxt:focus{background:color-mix(in srgb,currentColor 14%,transparent);cursor:text}
 .row{display:flex;gap:4px;align-items:flex-start;padding:3px 0;border-top:1px solid color-mix(in srgb,currentColor 22%,transparent)}
 .ltxt{flex:1;min-width:0;padding:0 4px;border-radius:3px;cursor:text;white-space:pre-wrap}
@@ -26,6 +34,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .addline{margin-top:4px;font-size:12px;text-align:center;opacity:0;cursor:pointer;padding:1px;border-radius:4px;
   border:1px dashed color-mix(in srgb,currentColor 40%,transparent)}
 .box:hover .addline,.box.sel .addline{opacity:.7}
+.cbtn{position:absolute;top:9px;right:9px;width:18px;height:18px;border-radius:5px;display:none;align-items:center;justify-content:center;
+  font-size:11px;line-height:1;cursor:pointer;background:color-mix(in srgb,currentColor 18%,transparent);-webkit-user-select:none;user-select:none}
+.cbtn:hover{background:color-mix(in srgb,currentColor 32%,transparent)}
+.box.sel .cbtn{display:flex}
+.cbtn.hold{animation:hold 3s linear forwards}
+@keyframes hold{from{box-shadow:0 0 0 0 var(--acc)}to{box-shadow:0 0 0 7px var(--acc)}}
 #handles{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none;z-index:1000000}
 .hnd{display:none;r:calc(7px*var(--k,1));fill:#fff;stroke:var(--acc);stroke-width:2.5;cursor:grab;pointer-events:all}
 .hnd.on{display:block}
@@ -33,26 +47,34 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .rsz.on{display:block}
 .rsz[data-c=nw],.rsz[data-c=se]{cursor:nwse-resize}
 .rsz[data-c=ne],.rsz[data-c=sw]{cursor:nesw-resize}
-.edge .line{fill:none;stroke-width:2.5;stroke-linecap:round}
-.edge .hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
-.edge .halo{fill:none;stroke:var(--acc);stroke-width:9;opacity:0;stroke-linecap:round}
+body.linking .hnd,body.linking .rsz{pointer-events:none}
+.tmp{fill:none;stroke:var(--ok);stroke-width:2.5;stroke-dasharray:6 5}
+.edge .line{fill:none;stroke-linecap:round}
+.edge .hit{fill:none;stroke:transparent;pointer-events:stroke;cursor:pointer}
+.edge .halo{fill:none;stroke:var(--acc);opacity:0;stroke-linecap:round}
 .edge.sel .halo{opacity:.35}
+.edge.drop .halo{opacity:.5;stroke:var(--ok)}
 .edge text{font-size:13px;fill:var(--txt);paint-order:stroke;stroke:var(--bg);stroke-width:5px;stroke-linejoin:round;text-anchor:middle;pointer-events:none}
 .edge-input{position:absolute;transform:translate(-50%,-50%);z-index:60;width:150px;padding:3px 6px;font:13px system-ui;
   background:var(--panel);color:var(--txt);border:1px solid var(--acc);border-radius:5px;outline:none}
-.rb{position:absolute;display:none;z-index:40;pointer-events:none;border:1.5px dashed var(--acc);background:rgba(91,157,255,.08);border-radius:10px}
+.rb{position:absolute;display:none;z-index:40;pointer-events:none;border:1.5px dashed var(--acc);background:color-mix(in srgb,var(--acc) 9%,transparent);border-radius:10px}
 #bar{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;
-  padding:6px 10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.4);max-width:96vw}
-#bar button{background:#2a2f39;color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;font:inherit}
-#bar button:hover:not(:disabled){background:#343b48}
+  padding:6px 10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px var(--shadow);max-width:96vw}
+#bar button{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;font:inherit}
+#bar button:hover:not(:disabled){background:var(--btnh)}
 #bar button:disabled{opacity:.35;cursor:default}
+#bar select{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit}
+#bar select:disabled,#ew:disabled{opacity:.35}
+#ew{width:70px;vertical-align:middle}
 .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
-.sw{width:22px;height:22px;padding:0!important;border-radius:50%!important;border:2px solid transparent!important}
-.sw.on{border-color:#fff!important}
+.sw{width:22px;height:22px;padding:0!important;border-radius:50%!important;border:2px solid var(--line)!important}
+#bar .sw.on{border-color:var(--txt)!important}
 #custom{width:28px;height:26px;padding:0;border:none;background:none;cursor:pointer}
 #custom:disabled{opacity:.35}
-#target{font-size:12px;opacity:.7;min-width:120px}
-#hint{position:fixed;left:12px;bottom:10px;z-index:90;font-size:12px;opacity:.55;max-width:70vw;pointer-events:none}
+#target{font-size:12px;opacity:.7}
+#bar{flex-wrap:nowrap;width:max-content}#bar>*{flex-shrink:0}
+@media (max-width:1100px){#bar{flex-wrap:wrap;width:auto;left:2vw;right:2vw;transform:none}}
+#hint{position:fixed;left:12px;bottom:10px;z-index:90;font-size:12px;opacity:.6;max-width:70vw;pointer-events:none}
 #empty{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.4;font-size:18px}
 #empty[hidden]{display:none}
 </style>
@@ -74,34 +96,62 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
   <input type="color" id="custom" title="Custom color">
   <span id="target"></span>
   <span class="sep"></span>
+  <span id="eopts">
+    <input type="range" id="ew" min="1" max="12" step="1" value="3" title="Arrow thickness">
+    <select id="es" title="Arrow line style"><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select>
+  </span>
+  <span class="sep"></span>
   <button id="del">Delete</button>
   <button id="swap" title="Reverse arrow direction">&#8644; Swap</button>
   <button id="save">Save</button>
   <button id="load">Load</button>
   <button id="reset">Reset view</button>
+  <button id="theme" title="Theme: follows system by default">Auto</button>
   <input type="file" id="file" accept=".json,application/json" hidden>
 </div>
-<div id="hint">Drag empty space: new box &middot; Drag a box border: arrow &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Select a box: drag corner squares to resize &middot; Select an arrow: drag end dots along borders, Swap reverses it &middot; Double-click: rename title / arrow label &middot; Del: delete</div>
+<div id="hint">Drag empty space: new box &middot; Drag a box border or an arrow: new arrow (can end on boxes or arrows) &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corner squares resize, corner button collapses (hold 3s = all) &middot; Arrow selected: drag end dots to slide, Swap reverses &middot; Double-click: rename title / arrow label &middot; Del: delete</div>
 
 <script>
 (() => {
 const $ = s => document.querySelector(s);
-const stage = $('#stage'), world = $('#world'), svg = $('#edges'), rb = $('#rb');
+const stage = $('#stage'), world = $('#world'), svg = $('#edges'), rb = $('#rb'), root = document.documentElement;
 const NS = 'http://www.w3.org/2000/svg';
-const PALETTE = ['#2b3140','#9aa4b5','#3b6fd4','#2f9e6f','#c98a1b','#d1495b','#8a5cd6','#e8e8ea'];
+const PALETTE = ['#2b3140','#ffffff','#9aa4b5','#3b6fd4','#2f9e6f','#c98a1b','#d1495b','#8a5cd6','#e8e8ea'];
 const EDGE_DEFAULT = '#9aa4b5';
-const KEY = 'ideamap-v1';
+const KEY = 'ideamap-v2', OLDKEY = 'ideamap-v1', TKEY = 'ideamap-theme';
 const EDGE_ZONE = 8;
 
 let boxes = [], edges = [], view = {x:0, y:0, z:1};
-let sel = null, drag = null, space = false, zTop = 1;
+let sel = null, drag = null, space = false, zTop = 1, tmp = null;
 const els = {}, gEls = {};
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-3);
 const S = (n, a = {}) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
 const toWorld = (cx, cy) => ({x: (cx - view.x) / view.z, y: (cy - view.y) / view.z});
+const clamp01 = v => Math.min(1, Math.max(0, v));
 const ink = hex => { const n = parseInt(hex.slice(1), 16); const l = .299*(n>>16) + .587*(n>>8&255) + .114*(n&255); return l > 150 ? '#14161a' : '#f2f3f5'; };
-const isEditing = () => { const a = document.activeElement; return !!a && (a.isContentEditable || a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'color')); };
+const isEditing = () => {
+  const a = document.activeElement;
+  return !!a && (a.isContentEditable || a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'color' && a.type !== 'range'));
+};
 
+/* ---------- theme (follows system unless overridden) ---------- */
+const sysDark = matchMedia('(prefers-color-scheme: dark)');
+let themePref = 'auto';
+try { themePref = localStorage.getItem(TKEY) || 'auto'; } catch (_) {}
+if (!['auto', 'light', 'dark'].includes(themePref)) themePref = 'auto';
+const isDark = () => themePref === 'auto' ? sysDark.matches : themePref === 'dark';
+function applyTheme() {
+  if (themePref === 'auto') root.removeAttribute('data-theme'); else root.dataset.theme = themePref;
+  $('#theme').textContent = {auto: '◐ Auto', light: '☀ Light', dark: '☾ Dark'}[themePref];
+}
+$('#theme').onclick = () => {
+  themePref = {auto: 'light', light: 'dark', dark: 'auto'}[themePref];
+  try { localStorage.setItem(TKEY, themePref); } catch (_) {}
+  applyTheme();
+};
+const defaultBoxColor = () => isDark() ? '#2b3140' : '#ffffff';
+
+/* ---------- text-editing helpers ---------- */
 function editable(el) {
   try { el.contentEditable = 'plaintext-only'; } catch (_) {}
   if (el.contentEditable !== 'plaintext-only') el.contentEditable = 'true';
@@ -152,8 +202,8 @@ function applyView() {
   world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`;
   stage.style.backgroundSize = `${24*view.z}px ${24*view.z}px`;
   stage.style.backgroundPosition = `${view.x}px ${view.y}px`;
-  clearTimeout(vtm); vtm = setTimeout(persist, 400);
   $('#handles').style.setProperty('--k', 1 / view.z);
+  clearTimeout(vtm); vtm = setTimeout(persist, 400);
   drawEdges();
 }
 
@@ -161,10 +211,15 @@ function applyView() {
 const ro = new ResizeObserver(() => drawEdges());
 
 function styleBox(b) {
-  Object.assign(els[b.id].style, {
-    left: b.x + 'px', top: b.y + 'px', width: b.w + 'px', minHeight: b.h + 'px',
+  const el = els[b.id];
+  Object.assign(el.style, {
+    left: b.x + 'px', top: b.y + 'px', width: b.w + 'px', minHeight: b.collapsed ? '0px' : b.h + 'px',
     background: b.color, color: ink(b.color)
   });
+  el.classList.toggle('col', !!b.collapsed);
+  el.querySelector('.cbtn').textContent = b.collapsed ? '▸' : '▾';
+  const t = el.querySelector('.title'), n = b.lines.filter(s => s.trim()).length;
+  if (b.collapsed && n) t.dataset.n = n; else delete t.dataset.n;
 }
 function syncLines(b) {
   b.lines = [...els[b.id].querySelectorAll('.ltxt')].map(x => x.textContent);
@@ -172,7 +227,7 @@ function syncLines(b) {
 function mkRow(b, text) {
   const row = document.createElement('div'); row.className = 'row';
   const t = document.createElement('div'); t.className = 'ltxt'; t.textContent = text; editable(t);
-  const x = document.createElement('span'); x.className = 'x'; x.textContent = '\u00d7';
+  const x = document.createElement('span'); x.className = 'x'; x.textContent = '×';
   row.append(t, x);
   t.addEventListener('input', () => { syncLines(b); schedule(); });
   t.addEventListener('keydown', e => {
@@ -205,9 +260,10 @@ function editTitle(b) {
   const t = els[b.id].querySelector('.title');
   editable(t); t.focus(); selectAll(t);
 }
+function setCollapsed(b, v) { b.collapsed = v; styleBox(b); }
 function mkBox(b) {
   const el = document.createElement('div'); el.className = 'box'; el.dataset.id = b.id;
-  el.innerHTML = '<div class="title" data-ph="Title\u2026"></div><div class="lines"></div><div class="addline">+ line</div>';
+  el.innerHTML = '<div class="cbtn" title="Collapse / expand (hold 3s: all boxes)"></div><div class="title" data-ph="Title…"></div><div class="lines"></div><div class="addline">+ line</div>';
   world.appendChild(el); els[b.id] = el;
   const t = el.querySelector('.title');
   t.contentEditable = 'false'; t.textContent = b.title;
@@ -217,82 +273,159 @@ function mkBox(b) {
   t.addEventListener('focusout', () => {
     t.contentEditable = 'false';
     const v = t.textContent.trim();
-    if (!v && el.dataset.fresh) { delBox(b.id, true); return; }
+    if (!v && el.dataset.fresh) { delObjs([b.id], true); return; }
     b.title = v || 'Untitled'; t.textContent = b.title;
     delete el.dataset.fresh; commit();
   });
   el.querySelector('.addline').addEventListener('click', () => {
     const r = mkRow(b, ''); el.querySelector('.lines').appendChild(r); r.firstChild.focus();
   });
+  const cb = el.querySelector('.cbtn');
+  cb.addEventListener('mousedown', ev => {
+    if (ev.button !== 0) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const target = !b.collapsed; let fired = false;
+    cb.classList.add('hold');
+    const timer = setTimeout(() => {
+      fired = true; cb.classList.remove('hold');
+      boxes.forEach(x => setCollapsed(x, target)); drawEdges(); commit();
+    }, 3000);
+    const up = () => {
+      window.removeEventListener('mouseup', up); clearTimeout(timer); cb.classList.remove('hold');
+      if (!fired) { setCollapsed(b, target); drawEdges(); commit(); }
+    };
+    window.addEventListener('mouseup', up);
+  });
   styleBox(b); renderLines(b); ro.observe(el);
   return el;
 }
-function delBox(id, silent) {
-  const el = els[id];
-  if (el) { ro.unobserve(el); el.remove(); delete els[id]; }
-  boxes = boxes.filter(b => b.id !== id);
-  edges = edges.filter(e => e.from !== id && e.to !== id);
-  if (sel && sel.id === id) sel = null;
+/* delete boxes/arrows by id; arrows attached to anything removed go too */
+function delObjs(ids, silent) {
+  const rm = new Set(ids);
+  for (let ch = true; ch;) {
+    ch = false;
+    edges.forEach(e => { if (!rm.has(e.id) && (rm.has(e.from) || rm.has(e.to))) { rm.add(e.id); ch = true; } });
+  }
+  boxes.filter(b => rm.has(b.id)).forEach(b => {
+    const el = els[b.id]; if (el) { ro.unobserve(el); el.remove(); delete els[b.id]; }
+  });
+  boxes = boxes.filter(b => !rm.has(b.id));
+  edges = edges.filter(e => !rm.has(e.id));
+  if (sel && rm.has(sel.id)) sel = null;
   drawEdges(); updBar();
   if (!silent) commit();
 }
 
-/* ---------- edges ---------- */
+/* ---------- geometry (arrows can attach to boxes or to other arrows) ---------- */
 const R = b => ({x: b.x, y: b.y, w: els[b.id].offsetWidth, h: els[b.id].offsetHeight});
-function geom(e, a, b) {
-  const ra = R(a), rb2 = R(b);
-  const Sp = {x: ra.x + e.fx * ra.w, y: ra.y + e.fy * ra.h};
-  const C = {x: rb2.x + rb2.w / 2, y: rb2.y + rb2.h / 2};
-  const dx = Sp.x - C.x, dy = Sp.y - C.y;
-  let E;
-  if (e.tx != null && e.ty != null) E = {x: rb2.x + e.tx * rb2.w, y: rb2.y + e.ty * rb2.h};
-  else if ((Math.abs(dx) < rb2.w / 2 && Math.abs(dy) < rb2.h / 2) || (!dx && !dy)) E = C;
-  else {
-    const t = Math.min(dx ? rb2.w / 2 / Math.abs(dx) : Infinity, dy ? rb2.h / 2 / Math.abs(dy) : Infinity);
-    E = {x: C.x + dx * t, y: C.y + dy * t};
-  }
-  return {S: Sp, E, mid: {x: (Sp.x + E.x) / 2, y: (Sp.y + E.y) / 2}};
+const lerp = (a, b, t) => ({x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t});
+const projT = (p, a, b) => {
+  const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy;
+  return l ? clamp01(((p.x - a.x) * dx + (p.y - a.y) * dy) / l) : 0;
+};
+function makeGeo() {
+  const bm = new Map(boxes.map(b => [b.id, b])), em = new Map(edges.map(e => [e.id, e]));
+  const memo = new Map(), busy = new Set();
+  const geo = e => {
+    if (memo.has(e.id)) return memo.get(e.id);
+    if (busy.has(e.id)) return null;
+    busy.add(e.id);
+    let out = null;
+    const sp = geo.pt(e.from, e.fa);
+    if (sp) { const ep = geo.end(e, sp); if (ep) out = {S: sp, E: ep, mid: lerp(sp, ep, .5)}; }
+    busy.delete(e.id); memo.set(e.id, out); return out;
+  };
+  geo.pt = (id, a) => {
+    const b = bm.get(id);
+    if (b) {
+      if (!els[b.id]) return null;
+      const r = R(b); a = a || {};
+      return {x: r.x + (a.x || 0) * r.w, y: r.y + (a.y || 0) * r.h};
+    }
+    const oe = em.get(id); if (!oe) return null;
+    const G = geo(oe); if (!G) return null;
+    return lerp(G.S, G.E, a && a.t != null ? a.t : .5);
+  };
+  geo.end = (e, sp) => {
+    const b = bm.get(e.to);
+    if (b) {
+      if (!els[b.id]) return null;
+      const r = R(b);
+      if (e.ta && e.ta.x != null) return {x: r.x + e.ta.x * r.w, y: r.y + e.ta.y * r.h};
+      const c = {x: r.x + r.w / 2, y: r.y + r.h / 2}, dx = sp.x - c.x, dy = sp.y - c.y;
+      if ((Math.abs(dx) < r.w / 2 && Math.abs(dy) < r.h / 2) || (!dx && !dy)) return c;
+      const t = Math.min(dx ? r.w / 2 / Math.abs(dx) : Infinity, dy ? r.h / 2 / Math.abs(dy) : Infinity);
+      return {x: c.x + dx * t, y: c.y + dy * t};
+    }
+    const oe = em.get(e.to); if (!oe) return null;
+    const G = geo(oe); if (!G) return null;
+    return lerp(G.S, G.E, e.ta && e.ta.t != null ? e.ta.t : projT(sp, G.S, G.E));
+  };
+  geo.isBox = id => bm.has(id);
+  geo.edge = id => em.get(id);
+  return geo;
 }
+function snapBorder(r, p) {
+  const x = Math.min(r.x + r.w, Math.max(r.x, p.x)), y = Math.min(r.y + r.h, Math.max(r.y, p.y));
+  const d = [x - r.x, r.x + r.w - x, y - r.y, r.y + r.h - y], i = d.indexOf(Math.min(...d));
+  let fx = (x - r.x) / r.w, fy = (y - r.y) / r.h;
+  if (i === 0) fx = 0; else if (i === 1) fx = 1; else if (i === 2) fy = 0; else fy = 1;
+  return {x: fx, y: fy};
+}
+/* anchor for a point p on object id: fractions on a box border, or t along an arrow */
+function slideAnchor(geo, id, p) {
+  if (geo.isBox(id)) return els[id] ? snapBorder(R(boxes.find(b => b.id === id)), p) : null;
+  const oe = geo.edge(id), G = oe && geo(oe);
+  return G ? {t: projT(p, G.S, G.E)} : null;
+}
+
+/* ---------- arrows ---------- */
 function mkEdgeG(e) {
   const g = S('g', {class: 'edge'}); g.dataset.id = e.id;
   g.append(S('path', {class: 'halo'}), S('path', {class: 'hit'}), S('path', {class: 'line'}),
-           S('polygon', {class: 'head'}), S('circle', {class: 'dot', r: 3.5}), S('text'));
+           S('polygon', {class: 'head'}), S('circle', {class: 'dot'}), S('text'));
   svg.appendChild(g); gEls[e.id] = g; return g;
 }
+function dashFor(style, w) {
+  if (style === 'dashed') return `${w * 3} ${w * 2.4}`;
+  if (style === 'dotted') return `0.1 ${w * 2.2}`;
+  return 'none';
+}
 function drawEdges() {
-  const live = new Set();
+  const geo = makeGeo(), live = new Set();
   edges.forEach(e => {
-    const a = boxes.find(x => x.id === e.from), b = boxes.find(x => x.id === e.to);
-    if (!a || !b || !els[a.id] || !els[b.id]) return;
+    const G = geo(e); if (!G) return;
     live.add(e.id);
     const g = gEls[e.id] || mkEdgeG(e);
     g.classList.toggle('sel', !!sel && sel.type === 'edge' && sel.id === e.id);
-    const G = geom(e, a, b);
-    const ang = Math.atan2(G.E.y - G.S.y, G.E.x - G.S.x);
-    const L = Math.hypot(G.E.x - G.S.x, G.E.y - G.S.y);
-    const back = Math.min(9, L / 2);
+    const w = e.w || 3;
+    const ang = Math.atan2(G.E.y - G.S.y, G.E.x - G.S.x), L = Math.hypot(G.E.x - G.S.x, G.E.y - G.S.y);
+    const hl = 8 + w * 2.2, back = Math.min(hl * .7, L / 2);
     const P = {x: G.E.x - Math.cos(ang) * back, y: G.E.y - Math.sin(ang) * back};
     const full = `M${G.S.x} ${G.S.y}L${G.E.x} ${G.E.y}`;
-    g.querySelector('.halo').setAttribute('d', full);
-    g.querySelector('.hit').setAttribute('d', full);
+    const halo = g.querySelector('.halo'), hit = g.querySelector('.hit');
+    halo.setAttribute('d', full); halo.style.strokeWidth = w + 8;
+    hit.setAttribute('d', full); hit.style.strokeWidth = Math.max(16, w + 10);
     const ln = g.querySelector('.line');
     ln.setAttribute('d', `M${G.S.x} ${G.S.y}L${P.x} ${P.y}`); ln.setAttribute('stroke', e.color);
-    const p1 = {x: G.E.x - 13 * Math.cos(ang - .42), y: G.E.y - 13 * Math.sin(ang - .42)};
-    const p2 = {x: G.E.x - 13 * Math.cos(ang + .42), y: G.E.y - 13 * Math.sin(ang + .42)};
+    ln.style.strokeWidth = w; ln.style.strokeDasharray = dashFor(e.style, w);
+    const p1 = {x: G.E.x - hl * Math.cos(ang - .42), y: G.E.y - hl * Math.sin(ang - .42)};
+    const p2 = {x: G.E.x - hl * Math.cos(ang + .42), y: G.E.y - hl * Math.sin(ang + .42)};
     const h = g.querySelector('.head');
     h.setAttribute('points', `${G.E.x},${G.E.y} ${p1.x},${p1.y} ${p2.x},${p2.y}`); h.setAttribute('fill', e.color);
-    const d = g.querySelector('.dot'); d.setAttribute('cx', G.S.x); d.setAttribute('cy', G.S.y); d.setAttribute('fill', e.color);
-    const t = g.querySelector('text'); t.setAttribute('x', G.mid.x); t.setAttribute('y', G.mid.y - 7); t.textContent = e.label || '';
+    const d = g.querySelector('.dot');
+    d.setAttribute('cx', G.S.x); d.setAttribute('cy', G.S.y); d.setAttribute('r', Math.max(3.5, w * .9)); d.setAttribute('fill', e.color);
+    const t = g.querySelector('text');
+    t.setAttribute('x', G.mid.x); t.setAttribute('y', G.mid.y - (w / 2 + 6)); t.textContent = e.label || '';
   });
   for (const id in gEls) if (!live.has(id)) { gEls[id].remove(); delete gEls[id]; }
+
   const se = sel && sel.type === 'edge' && edges.find(x => x.id === sel.id);
-  const sa = se && boxes.find(x => x.id === se.from), sb = se && boxes.find(x => x.id === se.to);
-  const on = !!(se && sa && sb && els[sa.id] && els[sb.id]);
+  const SG = se && geo(se), on = !!SG;
   $('#hS').classList.toggle('on', on); $('#hE').classList.toggle('on', on);
   if (on) {
-    const G = geom(se, sa, sb);
-    $('#hS').setAttribute('cx', G.S.x); $('#hS').setAttribute('cy', G.S.y);
-    $('#hE').setAttribute('cx', G.E.x); $('#hE').setAttribute('cy', G.E.y);
+    $('#hS').setAttribute('cx', SG.S.x); $('#hS').setAttribute('cy', SG.S.y);
+    $('#hE').setAttribute('cx', SG.E.x); $('#hE').setAttribute('cy', SG.E.y);
   }
   const sbx = sel && sel.type === 'box' && boxes.find(x => x.id === sel.id);
   const bon = !!(sbx && els[sbx.id]);
@@ -308,25 +441,21 @@ function drawEdges() {
 function swapEdge() {
   if (!sel || sel.type !== 'edge') return;
   const e = edges.find(x => x.id === sel.id); if (!e) return;
-  const a = boxes.find(x => x.id === e.from), b = boxes.find(x => x.id === e.to);
-  if (!a || !b) return;
-  const G = geom(e, a, b), rb2 = R(b);
-  const nfx = Math.min(1, Math.max(0, (G.E.x - rb2.x) / rb2.w)), nfy = Math.min(1, Math.max(0, (G.E.y - rb2.y) / rb2.h));
-  const ntx = e.fx, nty = e.fy;
-  e.from = b.id; e.to = a.id; e.fx = nfx; e.fy = nfy; e.tx = ntx; e.ty = nty;
+  const geo = makeGeo(), G = geo(e); if (!G) return;
+  let na;
+  if (geo.isBox(e.to)) {
+    const r = R(boxes.find(b => b.id === e.to));
+    na = {x: clamp01((G.E.x - r.x) / r.w), y: clamp01((G.E.y - r.y) / r.h)};
+  } else {
+    const H = geo(geo.edge(e.to));
+    na = {t: e.ta && e.ta.t != null ? e.ta.t : (H ? projT(G.S, H.S, H.E) : .5)};
+  }
+  const of = e.from, ofa = e.fa;
+  e.from = e.to; e.to = of; e.fa = na; e.ta = ofa;
   drawEdges(); commit();
 }
-function snapBorder(r, p) {
-  const x = Math.min(r.x + r.w, Math.max(r.x, p.x)), y = Math.min(r.y + r.h, Math.max(r.y, p.y));
-  const d = [x - r.x, r.x + r.w - x, y - r.y, r.y + r.h - y], i = d.indexOf(Math.min(...d));
-  let fx = (x - r.x) / r.w, fy = (y - r.y) / r.h;
-  if (i === 0) fx = 0; else if (i === 1) fx = 1; else if (i === 2) fy = 0; else fy = 1;
-  return {x: fx, y: fy};
-}
 function editLabel(e) {
-  const a = boxes.find(x => x.id === e.from), b = boxes.find(x => x.id === e.to);
-  if (!a || !b) return;
-  const G = geom(e, a, b);
+  const G = makeGeo()(e); if (!G) return;
   const inp = document.createElement('input'); inp.className = 'edge-input'; inp.placeholder = 'label';
   inp.value = e.label || '';
   inp.style.left = G.mid.x + 'px'; inp.style.top = G.mid.y + 'px';
@@ -346,16 +475,18 @@ function select(s) {
   sel = s;
   for (const id in els) els[id].classList.toggle('sel', !!s && s.type === 'box' && s.id === id);
   if (s && s.type === 'box') els[s.id].style.zIndex = ++zTop;
-  for (const id in gEls) gEls[id].classList.toggle('sel', !!s && s.type === 'edge' && s.id === id);
   drawEdges(); updBar();
 }
 function updBar() {
   $('#undo').disabled = hp <= 0;
   $('#redo').disabled = hp >= hist.length - 1;
   $('#del').disabled = !sel;
-  $('#swap').disabled = !(sel && sel.type === 'edge');
+  const isE = !!sel && sel.type === 'edge';
+  $('#swap').disabled = !isE;
   const it = curItem();
-  $('#target').textContent = !it ? 'Select a box or arrow to color it' : sel.type === 'box' ? 'Box color' : 'Arrow color';
+  $('#ew').disabled = !isE; $('#es').disabled = !isE;
+  if (isE && it) { $('#ew').value = it.w || 3; $('#es').value = it.style || 'solid'; }
+  $('#target').textContent = !it ? '' : isE ? 'Arrow' : 'Box';
   document.querySelectorAll('.sw').forEach(s => { s.classList.toggle('on', !!it && s.dataset.c === it.color); s.disabled = !it; s.style.opacity = it ? 1 : .35; });
   $('#custom').disabled = !it; if (it) $('#custom').value = it.color;
   $('#empty').hidden = boxes.length > 0;
@@ -373,6 +504,9 @@ PALETTE.forEach(c => {
 });
 $('#custom').addEventListener('input', e => applyColor(e.target.value, false));
 $('#custom').addEventListener('change', e => applyColor(e.target.value, true));
+$('#ew').addEventListener('input', e => { const it = curItem(); if (it && sel.type === 'edge') { it.w = +e.target.value; drawEdges(); } });
+$('#ew').addEventListener('change', () => commit());
+$('#es').addEventListener('change', e => { const it = curItem(); if (it && sel.type === 'edge') { it.style = e.target.value; drawEdges(); commit(); } });
 $('#undo').onclick = undo; $('#redo').onclick = redo;
 $('#del').onclick = delSel;
 $('#swap').onclick = swapEdge;
@@ -380,9 +514,7 @@ $('#reset').onclick = () => { view = {x: 0, y: 0, z: 1}; applyView(); };
 
 function delSel() {
   if (!sel) return;
-  const s = sel;
-  if (s.type === 'box') delBox(s.id);
-  else { edges = edges.filter(e => e.id !== s.id); sel = null; drawEdges(); updBar(); commit(); }
+  delObjs([sel.id]);
 }
 
 /* ---------- rebuild / load / save ---------- */
@@ -396,15 +528,30 @@ function load(d) {
   const okc = c => /^#[0-9a-f]{6}$/i.test(c);
   boxes = d.boxes.map(b => ({
     id: String(b.id || uid()), x: +b.x || 0, y: +b.y || 0, w: +b.w || 150, h: +b.h || 64,
-    title: String(b.title || 'Untitled'), color: okc(b.color) ? b.color : PALETTE[0],
-    lines: Array.isArray(b.lines) ? b.lines.map(String) : []
+    title: String(b.title || 'Untitled'), color: okc(b.color) ? b.color : '#2b3140',
+    lines: Array.isArray(b.lines) ? b.lines.map(String) : [], collapsed: !!b.collapsed
   }));
-  const ids = new Set(boxes.map(b => b.id));
-  edges = (Array.isArray(d.edges) ? d.edges : []).filter(e => ids.has(e.from) && ids.has(e.to)).map(e => ({
-    id: String(e.id || uid()), from: e.from, to: e.to, fx: +e.fx || 0, fy: +e.fy || 0,
-    tx: e.tx == null ? undefined : +e.tx, ty: e.ty == null ? undefined : +e.ty,
-    color: okc(e.color) ? e.color : EDGE_DEFAULT, label: String(e.label || '')
-  }));
+  const raw = (Array.isArray(d.edges) ? d.edges : []).map(e => ({...e, id: String(e.id || uid())}));
+  const boxIds = new Set(boxes.map(b => b.id)), all = new Set([...boxIds, ...raw.map(e => e.id)]);
+  const anc = (a, isBox, fx, fy) => {
+    if (a && typeof a === 'object') {
+      if (isBox) return {x: clamp01(+a.x || 0), y: clamp01(+a.y || 0)};
+      return {t: clamp01(a.t != null ? +a.t : .5)};
+    }
+    if (isBox && fx != null) return {x: clamp01(+fx || 0), y: clamp01(+fy || 0)};
+    return isBox ? {x: 0, y: 0} : {t: .5};
+  };
+  edges = raw.filter(e => all.has(e.from) && all.has(e.to) && e.from !== e.id && e.to !== e.id).map(e => {
+    const fb = boxIds.has(e.from), tb = boxIds.has(e.to);
+    const hasTa = (e.ta && typeof e.ta === 'object') || e.tx != null;
+    return {
+      id: e.id, from: e.from, to: e.to,
+      fa: anc(e.fa, fb, e.fx, e.fy),
+      ta: hasTa ? anc(e.ta, tb, e.tx, e.ty) : null,
+      color: okc(e.color) ? e.color : EDGE_DEFAULT, label: String(e.label || ''),
+      w: Math.min(12, Math.max(1, +e.w || 3)), style: ['solid', 'dashed', 'dotted'].includes(e.style) ? e.style : 'solid'
+    };
+  });
   if (d.view && isFinite(d.view.z) && d.view.z > 0) view = {x: +d.view.x || 0, y: +d.view.y || 0, z: +d.view.z};
   sel = null; rebuild(); applyView(); updBar();
 }
@@ -427,7 +574,7 @@ function edgeZone(boxEl, cx, cy) {
   const d = [lx, w - lx, ly, h - ly], m = Math.min(...d);
   return {near: m <= Math.max(EDGE_ZONE, 5 / z), side: d.indexOf(m), lx, ly, w, h};
 }
-let tmp = null;
+const blurActive = () => { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); };
 
 stage.addEventListener('contextmenu', e => e.preventDefault());
 stage.addEventListener('mousedown', e => {
@@ -438,7 +585,8 @@ stage.addEventListener('mousedown', e => {
     stage.style.cursor = 'grabbing'; return;
   }
   if (e.button !== 0) return;
-  if (e.target.classList && e.target.classList.contains('rsz') && sel && sel.type === 'box') {
+  const cls = e.target.classList;
+  if (cls && cls.contains('rsz') && sel && sel.type === 'box') {
     e.preventDefault();
     const b = boxes.find(x => x.id === sel.id), el = els[b.id], r = R(b);
     const prev = el.style.minHeight; el.style.minHeight = '0px';
@@ -446,7 +594,7 @@ stage.addEventListener('mousedown', e => {
     drag = {t: 'resize', c: e.target.dataset.c, b, sx: b.x, sy: b.y, sw: r.w, sh: r.h, minH: ch, moved: false};
     return;
   }
-  if (e.target.classList && e.target.classList.contains('hnd') && sel && sel.type === 'edge') {
+  if (cls && cls.contains('hnd') && sel && sel.type === 'edge') {
     e.preventDefault();
     drag = {t: 'handle', which: e.target.dataset.w, id: sel.id, moved: false};
     document.body.style.cursor = 'grabbing'; return;
@@ -457,28 +605,47 @@ stage.addEventListener('mousedown', e => {
     select({type: 'box', id: b.id});
     const z = edgeZone(boxEl, e.clientX, e.clientY);
     if (z.near) {
-      e.preventDefault();
-      if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
-      let fx = Math.min(1, Math.max(0, z.lx / z.w)), fy = Math.min(1, Math.max(0, z.ly / z.h));
+      e.preventDefault(); blurActive();
+      let fx = clamp01(z.lx / z.w), fy = clamp01(z.ly / z.h);
       if (z.side === 0) fx = 0; else if (z.side === 1) fx = 1; else if (z.side === 2) fy = 0; else fy = 1;
-      tmp = S('path', {fill: 'none', stroke: '#7cfc9a', 'stroke-width': 2.5, 'stroke-dasharray': '6 5'});
-      svg.appendChild(tmp);
-      drag = {t: 'link', from: b.id, fx, fy};
-      document.body.style.cursor = 'crosshair'; return;
+      drag = {t: 'link', from: b.id, fa: {x: fx, y: fy}, sx: e.clientX, sy: e.clientY, moved: false};
+      document.body.classList.add('linking'); document.body.style.cursor = 'crosshair'; return;
     }
     if (e.target.isContentEditable || e.target.closest('.x,.addline')) return;
-    e.preventDefault();
-    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+    e.preventDefault(); blurActive();
     drag = {t: 'move', b, ox: b.x, oy: b.y, sx: e.clientX, sy: e.clientY, moved: false};
     return;
   }
   const eg = e.target.closest('.edge');
-  if (eg) { e.preventDefault(); select({type: 'edge', id: eg.dataset.id}); return; }
-  e.preventDefault();
-  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+  if (eg) {
+    e.preventDefault(); blurActive();
+    const ed = edges.find(x => x.id === eg.dataset.id); if (!ed) return;
+    select({type: 'edge', id: ed.id});
+    const G = makeGeo()(ed);
+    if (G) {
+      drag = {t: 'link', from: ed.id, fa: {t: projT(toWorld(e.clientX, e.clientY), G.S, G.E)}, sx: e.clientX, sy: e.clientY, moved: false};
+      document.body.classList.add('linking');
+    }
+    return;
+  }
+  e.preventDefault(); blurActive();
   select(null);
   drag = {t: 'new', p: toWorld(e.clientX, e.clientY), sx: e.clientX, sy: e.clientY};
 });
+
+function dropTarget(e, fromId) {
+  const t = document.elementFromPoint(e.clientX, e.clientY);
+  const tb = t && t.closest && t.closest('.box');
+  const te = !tb && t && t.closest && t.closest('.edge');
+  return {
+    box: tb && tb.dataset.id !== fromId ? tb.dataset.id : null,
+    edge: te && te.dataset.id !== fromId ? te.dataset.id : null
+  };
+}
+function markDrops(tg) {
+  for (const id in els) els[id].classList.toggle('drop', tg.box === id);
+  for (const id in gEls) gEls[id].classList.toggle('drop', tg.edge === id);
+}
 
 window.addEventListener('mousemove', e => {
   if (!drag) {
@@ -503,23 +670,30 @@ window.addEventListener('mousemove', e => {
       width: Math.abs(c.x - drag.p.x) + 'px', height: Math.abs(c.y - drag.p.y) + 'px'
     });
   } else if (drag.t === 'resize') {
-    const p = toWorld(e.clientX, e.clientY), c = drag.c, MINW = 120;
+    const p = toWorld(e.clientX, e.clientY), c = drag.c, MINW = 120, b = drag.b;
     let l = drag.sx, t = drag.sy, r = drag.sx + drag.sw, bt = drag.sy + drag.sh;
     if (c.includes('w')) l = Math.min(p.x, r - MINW); else r = Math.max(p.x, l + MINW);
-    if (c.includes('n')) t = Math.min(p.y, bt - drag.minH); else bt = Math.max(p.y, t + drag.minH);
-    Object.assign(drag.b, {x: l, y: t, w: r - l, h: bt - t});
-    styleBox(drag.b); drag.moved = true; drawEdges();
+    if (!b.collapsed) {
+      if (c.includes('n')) t = Math.min(p.y, bt - drag.minH); else bt = Math.max(p.y, t + drag.minH);
+      b.h = bt - t;
+    } else if (c.includes('n')) t = drag.sy;
+    Object.assign(b, {x: l, y: t, w: r - l});
+    styleBox(b); drag.moved = true; drawEdges();
   } else if (drag.t === 'handle') {
     const ed = edges.find(x => x.id === drag.id); if (!ed) return;
-    const bx = boxes.find(x => x.id === (drag.which === 's' ? ed.from : ed.to));
-    const f = snapBorder(R(bx), toWorld(e.clientX, e.clientY));
-    if (drag.which === 's') { ed.fx = f.x; ed.fy = f.y; } else { ed.tx = f.x; ed.ty = f.y; }
+    const geo = makeGeo(), a = slideAnchor(geo, drag.which === 's' ? ed.from : ed.to, toWorld(e.clientX, e.clientY));
+    if (!a) return;
+    if (drag.which === 's') ed.fa = a; else ed.ta = a;
     drag.moved = true; drawEdges();
   } else if (drag.t === 'link') {
-    const a = boxes.find(x => x.id === drag.from), r = R(a), c = toWorld(e.clientX, e.clientY);
-    tmp.setAttribute('d', `M${r.x + drag.fx * r.w} ${r.y + drag.fy * r.h}L${c.x} ${c.y}`);
-    const t = document.elementFromPoint(e.clientX, e.clientY), tb = t && t.closest('.box');
-    for (const id in els) els[id].classList.toggle('drop', !!tb && tb.dataset.id === id && id !== drag.from);
+    if (!drag.moved) {
+      if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 4) return;
+      drag.moved = true; tmp = S('path', {class: 'tmp'}); svg.appendChild(tmp);
+    }
+    const sp = makeGeo().pt(drag.from, drag.fa); if (!sp) return;
+    const c = toWorld(e.clientX, e.clientY);
+    tmp.setAttribute('d', `M${sp.x} ${sp.y}L${c.x} ${c.y}`);
+    markDrops(dropTarget(e, drag.from));
   }
 });
 
@@ -527,6 +701,7 @@ window.addEventListener('mouseup', e => {
   if (!drag) return;
   const d = drag; drag = null;
   stage.style.cursor = space ? 'grab' : ''; document.body.style.cursor = '';
+  document.body.classList.remove('linking');
   if ((d.t === 'move' || d.t === 'handle' || d.t === 'resize') && d.moved) commit();
   else if (d.t === 'new') {
     rb.style.display = 'none';
@@ -535,19 +710,25 @@ window.addEventListener('mouseup', e => {
     const b = {
       id: uid(), x: Math.min(d.p.x, c.x), y: Math.min(d.p.y, c.y),
       w: Math.max(Math.abs(c.x - d.p.x), 150), h: Math.max(Math.abs(c.y - d.p.y), 64),
-      title: '', color: PALETTE[0], lines: []
+      title: '', color: defaultBoxColor(), lines: [], collapsed: false
     };
     boxes.push(b); mkBox(b); els[b.id].dataset.fresh = '1';
     select({type: 'box', id: b.id});
     setTimeout(() => editTitle(b), 0);
   } else if (d.t === 'link') {
-    tmp.remove(); tmp = null;
-    for (const id in els) els[id].classList.remove('drop');
-    const t = document.elementFromPoint(e.clientX, e.clientY), tb = t && t.closest('.box');
-    if (tb && tb.dataset.id !== d.from) {
-      const ed = {id: uid(), from: d.from, to: tb.dataset.id, fx: d.fx, fy: d.fy, color: EDGE_DEFAULT, label: ''};
-      edges.push(ed); drawEdges(); select({type: 'edge', id: ed.id}); commit();
+    if (tmp) { tmp.remove(); tmp = null; }
+    markDrops({});
+    if (!d.moved) return;
+    const tg = dropTarget(e, d.from);
+    let to = null, ta = null;
+    if (tg.box) to = tg.box;
+    else if (tg.edge) {
+      const geo = makeGeo(), oe = geo.edge(tg.edge), G = oe && geo(oe);
+      if (G) { to = tg.edge; ta = {t: projT(toWorld(e.clientX, e.clientY), G.S, G.E)}; }
     }
+    if (!to) return;
+    const ed = {id: uid(), from: d.from, to, fa: d.fa, ta, color: EDGE_DEFAULT, label: '', w: 3, style: 'solid'};
+    edges.push(ed); select({type: 'edge', id: ed.id}); commit();
   }
 });
 
@@ -579,8 +760,9 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => { if (e.code === 'Space') { space = false; if (!drag) stage.style.cursor = ''; } });
 
 /* ---------- init ---------- */
+applyTheme();
 try {
-  const raw = localStorage.getItem(KEY);
+  const raw = localStorage.getItem(KEY) || localStorage.getItem(OLDKEY);
   if (raw) load(JSON.parse(raw));
 } catch (_) { boxes = []; edges = []; }
 applyView(); commit(); updBar();
