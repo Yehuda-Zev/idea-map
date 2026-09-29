@@ -11,7 +11,7 @@ A lightweight flowchart / blueprint tool for mapping out ideas. It runs entirely
 - **Selection:** click to select, Shift-click to add or remove, **Ctrl+A** to select every box, node and arrow (with one box selected, it selects that box's text instead). Selected items move, recolor and delete together.
 - **Styling:** boxes and arrows can be colored. Boxes default to *Auto* (the half-white swatch), which follows the light/dark theme. Arrows also have a thickness, a line style (solid, dashed or dotted) and a label, and can be reversed.
 - **Canvas:** pan and zoom, undo and redo, and light or dark theme (follows the system by default).
-- **Saving:** the map autosaves in the browser. **Save** and **Load** export and import `.json` files.
+- **Saving:** the map autosaves in the browser. **Save** opens a Save-as dialog (name and folder of your choice; plain download in browsers without it) and **Load** imports a `.json` file.
 
 ## Files
 

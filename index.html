@@ -128,7 +128,7 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
   <button id="install" title="Install as an app" hidden>&#11015; Install</button>
   <input type="file" id="file" accept=".json,application/json" hidden>
 </div>
-<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; build 9</div>
+<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; build 10</div>
 
 <script>
 (() => {
@@ -962,9 +962,17 @@ function load(d) {
   if (d.view && isFinite(d.view.z) && d.view.z > 0) view = {x: +d.view.x || 0, y: +d.view.y || 0, z: +d.view.z};
   selSet = new Set(); sel = null; rebuild(); normalize(); applyView(); updBar();
 }
-$('#save').onclick = () => {
-  const blob = new Blob([JSON.stringify({...JSON.parse(snap()), view, ver: 5}, null, 2)], {type: 'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ideamap.json'; a.click();
+$('#save').onclick = async () => {
+  const text = JSON.stringify({...JSON.parse(snap()), view, ver: 5}, null, 2);
+  if (window.showSaveFilePicker) {   // Chrome/Edge: real "Save as" dialog with a custom name
+    try {
+      const h = await showSaveFilePicker({suggestedName: 'ideamap.json', types: [{description: 'Idea Map', accept: {'application/json': ['.json']}}]});
+      const w = await h.createWritable(); await w.write(text); await w.close();
+    } catch (err) { if (err && err.name !== 'AbortError') console.error(err); }   // cancel = do nothing
+    return;
+  }
+  const a = document.createElement('a');   // fallback: plain download
+  a.href = URL.createObjectURL(new Blob([text], {type: 'application/json'})); a.download = 'ideamap.json'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
 $('#load').onclick = () => $('#file').click();
