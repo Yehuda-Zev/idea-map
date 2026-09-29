@@ -128,7 +128,7 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
   <button id="install" title="Install as an app" hidden>&#11015; Install</button>
   <input type="file" id="file" accept=".json,application/json" hidden>
 </div>
-<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; build 8</div>
+<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; build 9</div>
 
 <script>
 (() => {
@@ -260,7 +260,7 @@ const snap = () => JSON.stringify({
   nodes, edges
 });
 function persist() {
-  try { localStorage.setItem(KEY, JSON.stringify({...JSON.parse(snap()), view, ver: 4})); } catch (_) {}
+  try { localStorage.setItem(KEY, JSON.stringify({...JSON.parse(snap()), view, ver: 5})); } catch (_) {}
 }
 function commit() {
   clearTimeout(tm);
@@ -418,6 +418,13 @@ function clampGrid(v, lo, hi) {
   if (a > b) return (lo + hi) / 2;
   return Math.min(b, Math.max(a, snapG(v)));
 }
+/* every grid point along a box's four sides (corners excluded), as anchor fractions */
+function borderAnchors(r) {
+  const out = [];
+  for (let x = r.x + G; x < r.x + r.w - 1e-6; x += G) { const f = (x - r.x) / r.w; out.push({x: f, y: 0}, {x: f, y: 1}); }
+  for (let y = r.y + G; y < r.y + r.h - 1e-6; y += G) { const f = (y - r.y) / r.h; out.push({x: 0, y: f}, {x: 1, y: f}); }
+  return out;
+}
 /* anchor fractions -> point on border (snapped to grid along the side) + outward direction */
 function anchorPt(r, a) {
   const s = sideOf(a);
@@ -538,6 +545,23 @@ function astar(Sp, sDir, Ep, eDir, obst, m) {
   return out.reverse();
 }
 /* helpers for choosing among candidate orthogonal routes */
+/* Auto end: try every border point of box r as the free end and keep the route with the
+   fewest turns (a turn costs about 3 cells of length). `fixed` is the other end. */
+function routeAuto(fixed, r, fixedIsStart, obst) {
+  const mk = a => { const q = anchorPt(r, a); return {P: {x: q.x, y: q.y}, dir: q.dir, box: true}; };
+  const rt = (c, cheap) => fixedIsStart ? computeRoute(fixed, c, obst, cheap) : computeRoute(c, fixed, obst, cheap);
+  const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+  let best = null;
+  for (const a of borderAnchors(r)) {
+    const c = mk(a), pts = rt(c, true); if (!pts) continue;
+    let len = 0; for (let i = 0; i < pts.length - 1; i++) len += Math.abs(pts[i + 1].x - pts[i].x) + Math.abs(pts[i + 1].y - pts[i].y);
+    const cost = (pts.length - 2) * 3 * G + len + Math.hypot(c.P.x - fixed.P.x, c.P.y - fixed.P.y) * 1e-4;
+    if (!best || cost < best.cost) best = {cost, c, pts};
+  }
+  if (best) return {end: best.c, pts: best.pts};
+  const c = mk(facing(r, fixed.P));
+  return {end: c, pts: rt(c, false)};
+}
 function dedupe(p) { return p.filter((q, i) => !i || Math.abs(q.x - p[i - 1].x) > .01 || Math.abs(q.y - p[i - 1].y) > .01); }
 function reverses(p) {   // any 180-degree doubling back?
   for (let i = 1; i < p.length - 1; i++) {
@@ -563,7 +587,7 @@ function zSweep(S, E, horiz) {
   vs.sort((p, q) => Math.abs(p - m) - Math.abs(q - m));
   return vs.slice(0, 80).map(v => horiz ? [S, {x: v, y: S.y}, {x: v, y: E.y}, E] : [S, {x: S.x, y: v}, {x: E.x, y: v}, E]);
 }
-function computeRoute(A, B, obst) {
+function computeRoute(A, B, obst, cheap) {
   const Sp = A.box ? stubPt(A.P, A.dir) : {x: snapG(A.P.x), y: snapG(A.P.y)};
   const Ep = B.box ? stubPt(B.P, B.dir) : {x: snapG(B.P.x), y: snapG(B.P.y)};
   const sDir = A.box ? A.dir : -1, eDir = B.box ? (B.dir + 2) & 3 : -1;
@@ -574,7 +598,7 @@ function computeRoute(A, B, obst) {
   const horiz = Math.abs(dx) >= Math.abs(dy), cands = [];
   if (!dx || !dy) cands.push([Sp, Ep]);
   const Zh = zSweep(Sp, Ep, true), Zv = zSweep(Sp, Ep, false);
-  cands.push(...(horiz ? [...Zh, ...Zv] : [...Zv, ...Zh]));
+  cands.push(...(horiz ? [...Zh.slice(0, cheap ? 3 : 80), ...Zv.slice(0, cheap ? 3 : 80)] : [...Zv.slice(0, cheap ? 3 : 80), ...Zh.slice(0, cheap ? 3 : 80)]));
   if (dx && dy) {
     const Lh = [Sp, {x: Ep.x, y: Sp.y}, Ep], Lv = [Sp, {x: Sp.x, y: Ep.y}, Ep];
     cands.push(...(horiz ? [Lh, Lv] : [Lv, Lh]));
@@ -588,6 +612,7 @@ function computeRoute(A, B, obst) {
     if (!bestPts || pts.length < bestPts.length) bestPts = pts;
   }
   if (bestPts) return bestPts;
+  if (cheap) return null;
   let path = null;
   if (obst.length) path = astar(Sp, sDir, Ep, eDir, obst, 6) || astar(Sp, sDir, Ep, eDir, obst, 25);
   if (!path) path = astar(Sp, sDir, Ep, eDir, [], 3);
@@ -661,14 +686,34 @@ function draw() {
     return {P: {x: q.x, y: q.y}, dir: q.dir, box: true};
   };
   const live = new Set(); ends = {};
+  const anKey = (id, a) => nm.has(id) ? `n${nm.get(id).x},${nm.get(id).y}` : a ? `a${a.x},${a.y}` : 'auto';
   for (const e of edges) {
-    const A = endOf(e.from, e.fa, refOf(e.to, e.ta)); if (!A) continue;
-    const B = endOf(e.to, e.ta, A.P); if (!B) continue;
-    ends[e.id] = {A, B};
-    const direct = e.mode === 'direct';
-    const key = [A.P.x, A.P.y, A.dir, B.P.x, B.P.y, B.dir, direct ? 'd' : sig].join(',');
+    if (!nm.has(e.from) && !rects.has(e.from)) continue;
+    if (!nm.has(e.to) && !rects.has(e.to)) continue;
+    const direct = e.mode === 'direct', ob = direct ? [] : obst;
+    const key = [anKey(e.from, e.fa), anKey(e.to, e.ta), direct ? 'd' : sig].join('|');
     let rc = routes[e.id];
-    if (!rc || rc.key !== key) { rc = routes[e.id] = {key, pts: computeRoute(A, B, direct ? [] : obst)}; }
+    if (!rc || rc.key !== key) {
+      const autoA = rects.has(e.from) && !e.fa, autoB = rects.has(e.to) && !e.ta;
+      const fixedEnd = (id, a) => nm.has(id) ? endOf(id, null, null) : endOf(id, a, {x: 0, y: 0});
+      let A, B, pts;
+      if (autoB && autoA) {          // both free: start faces the target, then the end is optimised
+        A = endOf(e.from, null, refOf(e.to, null));
+        ({end: B, pts} = routeAuto(A, rects.get(e.to), true, ob));
+      } else if (autoB) {
+        A = fixedEnd(e.from, e.fa);
+        ({end: B, pts} = routeAuto(A, rects.get(e.to), true, ob));
+      } else if (autoA) {            // e.g. after Swap: the start is the free end
+        B = fixedEnd(e.to, e.ta);
+        ({end: A, pts} = routeAuto(B, rects.get(e.from), false, ob));
+      } else {
+        A = fixedEnd(e.from, e.fa); B = fixedEnd(e.to, e.ta);
+        pts = computeRoute(A, B, ob);
+      }
+      rc = routes[e.id] = {key, pts, A, B};
+    }
+    const A = rc.A, B = rc.B;
+    ends[e.id] = {A, B};
     live.add(e.id);
     const g = gEls[e.id] || mkEdgeG(e);
     g.classList.toggle('sel', selSet.has(e.id));
@@ -884,7 +929,7 @@ function rebuild() {
 function load(d) {
   if (!d || !Array.isArray(d.boxes)) throw new Error('bad');
   const okc = c => /^#[0-9a-f]{6}$/i.test(c);
-  const legacy = d.ver !== 4;   // pre-v4 data stored the theme default as a fixed color
+  const legacy = !(d.ver >= 4), oldEnds = !(d.ver >= 5);   // pre-v4 data stored the theme default as a fixed color
   const isDef = c => /^#(2b3140|ffffff)$/i.test(c);
   boxes = d.boxes.map(b => ({
     id: String(b.id || uid()), x: snapG(+b.x || 0), y: snapG(+b.y || 0),
@@ -909,7 +954,7 @@ function load(d) {
   edges = (Array.isArray(d.edges) ? d.edges : []).filter(e => ids.has(e.from) && ids.has(e.to)).map(e => ({
     id: String(e.id || uid()), from: e.from, to: e.to,
     fa: boxIds.has(e.from) ? anc(e.fa, e.fx, e.fy) : null,
-    ta: boxIds.has(e.to) ? anc(e.ta, e.tx, e.ty) : null,
+    ta: boxIds.has(e.to) && !oldEnds ? anc(e.ta, e.tx, e.ty) : null,
     color: okc(e.color) ? e.color : EDGE_DEFAULT, label: String(e.label || ''),
     w: Math.min(12, Math.max(1, +e.w || 3)), style: ['solid', 'dashed', 'dotted'].includes(e.style) ? e.style : 'solid',
     mode: e.mode === 'direct' ? 'direct' : 'avoid'
@@ -918,7 +963,7 @@ function load(d) {
   selSet = new Set(); sel = null; rebuild(); normalize(); applyView(); updBar();
 }
 $('#save').onclick = () => {
-  const blob = new Blob([JSON.stringify({...JSON.parse(snap()), view, ver: 4}, null, 2)], {type: 'application/json'});
+  const blob = new Blob([JSON.stringify({...JSON.parse(snap()), view, ver: 5}, null, 2)], {type: 'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ideamap.json'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
@@ -1030,7 +1075,11 @@ window.addEventListener('mousemove', e => {
   if (drag.t === 'pan') {
     view.x = drag.vx + e.clientX - drag.sx; view.y = drag.vy + e.clientY - drag.sy; applyView();
   } else if (drag.t === 'move') {
-    if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 3) drag.moved = true;
+    if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 3) {
+      drag.moved = true;
+      const mv = new Set(drag.its.map(it => it.o.id));   // end box moved without its start: forget the custom end point
+      edges.forEach(ed => { if (ed.ta && mv.has(ed.to) && !mv.has(ed.from)) ed.ta = null; });
+    }
     if (drag.moved) {
       const dx = snapG((e.clientX - drag.sx) / view.z), dy = snapG((e.clientY - drag.sy) / view.z);
       drag.its.forEach(it => {
@@ -1111,7 +1160,7 @@ window.addEventListener('mouseup', e => {
     if (tg.type === 'box' || tg.type === 'border') {
       toId = tg.id;
       const tb = boxes.find(x => x.id === toId), fp = d.src.type === 'box' ? srcPoint(d.src) : nodes.find(n => n.id === fromId);
-      ta = facing(R(tb), fp);
+      ta = null;   // the end point is chosen by pathfinding, not by where the drag was released
     } else if (tg.type === 'node') toId = tg.id;
     else toId = splitEdge(tg.id, tgtPt);
     if (!toId || toId === fromId) { commit(); return; }
@@ -1174,7 +1223,7 @@ $('#install').onclick = async () => {
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
-window.__ideamap ={get boxes() { return boxes; }, get nodes() { return nodes; }, get edges() { return edges; }, get routes() { return routes; }};
+window.__ideamap ={get boxes() { return boxes; }, get nodes() { return nodes; }, get edges() { return edges; }, get routes() { return routes; }, get ends() { return ends; }};
 })();
 </script>
 </body>
