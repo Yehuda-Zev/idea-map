@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Idea Map</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -22,6 +22,16 @@
 :root[data-theme=dark]{--box-bg:#2b3140;--box-fg:#f2f3f5}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif}
 #stage{position:fixed;inset:0;background-image:radial-gradient(var(--dot) 1.2px,transparent 1.2px);background-size:20px 20px;-webkit-user-select:none;user-select:none}
+html,body{touch-action:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+#stage{-webkit-touch-callout:none}
+#ew{touch-action:none}
+.touch .hnd{r:calc(13px*var(--k,1))}
+.touch .cbtn{width:30px;height:30px;font-size:15px;top:6px;right:6px}
+.touch .title{margin-right:34px}
+.touch .x{opacity:.65;padding:0 10px}
+.touch .addline{opacity:.7;padding:6px}
+.tch{display:none}
+@media (pointer:coarse){.mouse{display:none}.tch{display:inline}#hint{display:none}}
 #world{position:absolute;left:0;top:0;transform-origin:0 0}
 #edges{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none;z-index:0}
 .box{position:absolute;min-width:120px;padding:10px;z-index:1;border-radius:10px;
@@ -72,16 +82,15 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
 #bar{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:6px;align-items:center;flex-wrap:nowrap;width:max-content;
   padding:6px 10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px var(--shadow)}
 #bar>*{flex-shrink:0}
-@media (max-width:1280px){#bar{flex-wrap:wrap;justify-content:center;width:auto;left:2vw;right:2vw;transform:none}}
-#bar button{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;font:inherit}
-#bar button:hover:not(:disabled){background:var(--btnh)}
-#bar button:disabled{opacity:.35;cursor:default}
-#bar select{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit}
-#bar select:disabled,#ew:disabled{opacity:.35}
+#bar button,.pop button{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;font:inherit}
+#bar button:hover:not(:disabled),.pop button:hover:not(:disabled){background:var(--btnh)}
+#bar button:disabled,.pop button:disabled{opacity:.35;cursor:default}
+#bar select,.pop select{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit}
+#bar select:disabled,.pop select:disabled,#ew:disabled{opacity:.35}
 #ew{width:70px;vertical-align:middle}
 .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
 .sw{width:22px;height:22px;padding:0!important;border-radius:50%!important;border:2px solid var(--line)!important}
-#bar .sw.on{border-color:var(--txt)!important}
+#bar .sw.on,.pop .sw.on{border-color:var(--txt)!important}
 #custom{width:28px;height:26px;padding:0;border:none;background:none;cursor:pointer}
 #custom:disabled{opacity:.35}
 #target{font-size:12px;opacity:.7}
@@ -95,6 +104,40 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
 #hint{position:fixed;left:12px;bottom:10px;z-index:90;font-size:12px;opacity:.6;max-width:70vw;pointer-events:none}
 #empty{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.4;font-size:18px}
 #empty[hidden]{display:none}
+#bar{flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 16px)}
+.mb.open{background:var(--acc)!important;color:#fff!important}
+.pop{position:fixed;z-index:120;display:none;flex-direction:column;gap:6px;min-width:210px;max-width:min(300px,calc(100vw - 16px));max-height:calc(100vh - 90px);overflow-y:auto;
+  padding:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px var(--shadow);touch-action:pan-y}
+.pop.open{display:flex}
+.pop button{text-align:left;display:block;width:100%}
+.pop button[hidden],.pop [hidden]{display:none}
+.pop .row2{display:flex;gap:8px;align-items:center}
+.pop .row2 label{font-size:12px;opacity:.7;min-width:64px}
+.pop .row2 select,.pop .row2 input[type=range]{flex:1;min-width:0}
+.pop hr{border:none;border-top:1px solid var(--line);margin:2px 0;width:100%}
+.swrow{display:grid;grid-template-columns:repeat(5,30px);gap:10px;justify-content:center;padding:4px 0}
+.pop .sw{width:30px;height:30px;min-width:0;padding:0;border-radius:9px!important;border:2px solid var(--line)!important;box-sizing:border-box;transition:transform .1s}
+.pop .sw:hover:not(:disabled){transform:scale(1.12)}
+.pop .sw.on{border-color:var(--txt)!important;box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--txt)}
+.pop #custom{width:34px;height:30px}
+#colors.editing .sw.cus{position:relative;outline:2px dashed #d1495b;outline-offset:2px}
+#colors.editing .sw.cus::after{content:'\00d7';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;text-shadow:0 0 3px #000}
+#selcolors{padding:2px 0 6px}
+.sc{display:none;position:absolute;left:8px;top:9px;width:16px;height:16px;border-radius:50%;box-sizing:border-box;border:2px solid currentColor;opacity:.75;z-index:3}
+body.selmode .sc{display:block}
+body.selmode .box.sel .sc{background:var(--acc);border-color:var(--acc);opacity:1;box-shadow:inset 0 0 0 2px var(--box-bg,#fff)}
+body.selmode .title{margin-left:22px}
+body.selmode .cbtn,body.selmode .rsz,body.selmode .hnd,body.selmode .x,body.selmode .addline{display:none!important}
+body.selmode .box{cursor:pointer}
+.touch .sc{width:22px;height:22px;left:7px;top:7px}
+.touch.selmode .title{margin-left:30px}
+#selpop{position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:110;display:none;flex-direction:column;gap:8px;padding:12px;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px var(--shadow);max-width:150px}
+body.selmode #selpop{display:flex}
+@media (max-width:700px){#selpop{right:auto;left:50%;top:auto;bottom:14px;transform:translateX(-50%);flex-direction:row;align-items:center;max-width:none;white-space:nowrap}}
+#selpop b{font-size:13px}
+#selpop button{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;font:inherit}
+#selpop #seldone{background:var(--acc);color:#fff;border-color:var(--acc)}
 </style>
 </head>
 <body>
@@ -105,30 +148,59 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
     <div class="rb" id="rb"></div>
   </div>
 </div>
-<div id="empty">Drag on empty space to create your first box</div>
+<div id="empty"><span class="mouse">Drag on empty space to create your first box</span><span class="tch">Double-tap empty space to create your first box</span></div>
 <div id="toast" hidden></div>
 <div id="bar">
-  <button id="undo" title="Undo (Ctrl+Z)">&#8630;</button>
-  <button id="redo" title="Redo (Ctrl+Y)">&#8631;</button>
-  <span class="sep"></span>
-  <span id="colors"></span>
-  <input type="color" id="custom" title="Custom color">
+  <button class="mb" data-m="file">File &#9662;</button>
+  <button class="mb" data-m="view">View &#9662;</button>
+  <button class="mb" data-m="select">Select &#9662;</button>
+  <button class="mb" data-m="box">Box &#9662;</button>
+  <button class="mb" data-m="arrow">Arrow &#9662;</button>
+  <button class="mb" data-m="color">Color &#9662;</button>
   <span id="target"></span>
-  <span class="sep"></span>
-  <input type="range" id="ew" min="1" max="12" step="1" value="3" title="Arrow thickness">
-  <select id="es" title="Arrow line style"><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select>
-  <select id="er" title="Arrow routing"><option value="avoid">Avoid boxes</option><option value="direct">Ignore boxes</option></select>
-  <span class="sep"></span>
-  <button id="del">Delete</button>
-  <button id="swap" title="Reverse arrow direction">&#8644; Swap</button>
-  <button id="save">Save</button>
-  <button id="load">Load</button>
-  <button id="reset">Reset view</button>
-  <button id="theme" title="Theme: follows system by default">Auto</button>
-  <button id="install" title="Install as an app" hidden>&#11015; Install</button>
-  <input type="file" id="file" accept=".json,application/json" hidden>
 </div>
-<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; build 10</div>
+<div class="pop" id="pop-file">
+  <button id="undo" title="Ctrl+Z">Undo</button>
+  <button id="redo" title="Ctrl+Y">Redo</button>
+  <hr>
+  <button id="save">Save&hellip;</button>
+  <button id="load">Load&hellip;</button>
+  <button id="install" title="Install as an app" hidden>&#11015; Install app</button>
+</div>
+<div class="pop" id="pop-view">
+  <button id="reset">Reset view</button>
+  <button id="theme" data-keep title="Theme: follows system by default">Theme</button>
+</div>
+<div class="pop" id="pop-select">
+  <button id="selall">All</button>
+  <button id="selinv">Inverse selection</button>
+  <button id="selcolbtn" data-keep>By color &#9656;</button>
+  <div class="swrow" id="selcolors" hidden></div>
+  <button id="selcustom">Custom (pick boxes)&hellip;</button>
+</div>
+<div class="pop" id="pop-box">
+  <button id="expall">Expand all</button>
+  <button id="colall">Collapse all</button>
+  <hr>
+  <button id="delbox">Delete selected boxes</button>
+</div>
+<div class="pop" id="pop-arrow">
+  <div class="row2"><label>Thickness</label><input type="range" id="ew" min="1" max="12" step="1" value="3" title="Arrow thickness"></div>
+  <div class="row2"><label>Line</label><select id="es" title="Arrow line style"><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></div>
+  <div class="row2"><label>Routing</label><select id="er" title="Arrow routing"><option value="avoid">Avoid boxes</option><option value="direct">Ignore boxes</option></select></div>
+  <hr>
+  <button id="swap" title="Reverse arrow direction">&#8644; Reverse</button>
+  <button id="delarrow">Delete selected arrows</button>
+</div>
+<div class="pop" id="pop-color">
+  <div class="swrow" id="colors"></div>
+  <hr>
+  <div class="row2"><input type="color" id="custom" title="Pick a color"><button id="addcolor" data-keep>Add to colors</button></div>
+  <button id="editcolors" data-keep hidden>Remove custom colors</button>
+</div>
+<div id="selpop"><b id="selcount">Selecting 0 boxes</b><button id="seldone">Done</button><button id="selcancel">Cancel</button></div>
+<input type="file" id="file" accept=".json,application/json" hidden>
+<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; Touch: drag = pan, two fingers = zoom, double-tap = new box / rename &middot; build 14</div>
 
 <script>
 (() => {
@@ -137,6 +209,7 @@ const stage = $('#stage'), world = $('#world'), eg = $('#eg'), ng = $('#ng'), rb
 const NS = 'http://www.w3.org/2000/svg';
 const PALETTE = ['auto','#2b3140','#ffffff','#9aa4b5','#3b6fd4','#2f9e6f','#c98a1b','#d1495b','#8a5cd6','#e8e8ea'];
 const EDGE_DEFAULT = '#9aa4b5';
+let palette = PALETTE.slice();   // colors offered in the Color menu; saved inside each map
 const KEY = 'ideamap-v4', OLDKEYS = ['ideamap-v3', 'ideamap-v2', 'ideamap-v1'], TKEY = 'ideamap-theme';
 const G = 20;                 // grid size (world px)
 const HOLD_MS = 2000;
@@ -146,6 +219,8 @@ let boxes = [], nodes = [], edges = [], view = {x:0, y:0, z:1};
 let sel = null, selSet = new Set(), drag = null, space = false, zTop = 1, tmp = null, hover = null;
 const els = {}, gEls = {}, nEls = {};
 let routes = {}, ends = {};
+let lastTouch = 0, tolK = 1, selectMode = false, prevSel = [];
+const fromTouch = () => Date.now() - lastTouch < 800;   // ignore the mouse events browsers synthesise after a touch
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-3);
 const S = (n, a = {}) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
 const toWorld = (cx, cy) => ({x: (cx - view.x) / view.z, y: (cy - view.y) / view.z});
@@ -191,7 +266,7 @@ try { themePref = localStorage.getItem(TKEY) || 'auto'; } catch (_) {}
 if (!['auto', 'light', 'dark'].includes(themePref)) themePref = 'auto';
 function applyTheme() {
   if (themePref === 'auto') root.removeAttribute('data-theme'); else root.dataset.theme = themePref;
-  $('#theme').textContent = {auto: '◐ Auto', light: '☀ Light', dark: '☾ Dark'}[themePref];
+  $('#theme').textContent = 'Theme: ' + {auto: '◐ Auto', light: '☀ Light', dark: '☾ Dark'}[themePref];
 }
 $('#theme').onclick = () => {
   themePref = {auto: 'light', light: 'dark', dark: 'auto'}[themePref];
@@ -260,7 +335,7 @@ const snap = () => JSON.stringify({
   nodes, edges
 });
 function persist() {
-  try { localStorage.setItem(KEY, JSON.stringify({...JSON.parse(snap()), view, ver: 5})); } catch (_) {}
+  try { localStorage.setItem(KEY, JSON.stringify({...JSON.parse(snap()), view, colors: palette, ver: 5})); } catch (_) {}
 }
 function commit() {
   clearTimeout(tm);
@@ -345,7 +420,7 @@ function editTitle(b) {
 function setCollapsed(b, v) { b.collapsed = v; styleBox(b); }
 function mkBox(b) {
   const el = document.createElement('div'); el.className = 'box'; el.dataset.id = b.id;
-  el.innerHTML = '<div class="cbtn" title="Collapse / expand (hold 2s: all boxes)"></div><div class="title" data-ph="Title…"></div><div class="lines"></div><div class="addline">+ line</div>';
+  el.innerHTML = '<div class="sc"></div><div class="cbtn" title="Collapse / expand (hold 2s: all boxes)"></div><div class="title" data-ph="Title…"></div><div class="lines"></div><div class="addline">+ line</div>';
   world.appendChild(el); els[b.id] = el;
   const t = el.querySelector('.title');
   t.contentEditable = 'false'; t.textContent = b.title;
@@ -379,20 +454,28 @@ function mkBox(b) {
     const r = mkRow(b, ''); el.querySelector('.lines').appendChild(r); r.firstChild.focus();
   });
   const cb = el.querySelector('.cbtn');
-  cb.addEventListener('mousedown', ev => {
-    if (ev.button !== 0) return;
-    ev.preventDefault(); ev.stopPropagation();
+  const hold = upEvt => {
     const target = !b.collapsed; let fired = false;
     cb.classList.add('hold');
     const timer = setTimeout(() => {
       fired = true; cb.classList.remove('hold');
       boxes.forEach(x => setCollapsed(x, target)); scheduleDraw(); commit();
     }, HOLD_MS);
-    const up = () => {
-      window.removeEventListener('mouseup', up); clearTimeout(timer); cb.classList.remove('hold');
-      if (!fired) { setCollapsed(b, target); scheduleDraw(); commit(); }
+    const up = ev => {
+      window.removeEventListener(upEvt, up); window.removeEventListener('pointercancel', up);
+      clearTimeout(timer); cb.classList.remove('hold');
+      if (!fired && ev.type !== 'pointercancel') { setCollapsed(b, target); scheduleDraw(); commit(); }
     };
-    window.addEventListener('mouseup', up);
+    window.addEventListener(upEvt, up); window.addEventListener('pointercancel', up);
+  };
+  cb.addEventListener('mousedown', ev => {
+    if (ev.button !== 0) return;
+    ev.preventDefault(); ev.stopPropagation();
+    if (!fromTouch()) hold('mouseup');
+  });
+  cb.addEventListener('pointerdown', ev => {
+    if (ev.pointerType !== 'touch') return;
+    ev.preventDefault(); ev.stopPropagation(); lastTouch = Date.now(); hold('pointerup');
   });
   styleBox(b); renderLines(b); ro.observe(el);
   return el;
@@ -761,7 +844,7 @@ function draw() {
   document.querySelectorAll('.rsz').forEach(h => {
     h.classList.toggle('on', bon);
     if (!bon) return;
-    const r = R(sbx), s = 10 / view.z, c = h.dataset.c;
+    const r = R(sbx), s = (document.body.classList.contains('touch') ? 24 : 10) / view.z, c = h.dataset.c;
     h.setAttribute('width', s); h.setAttribute('height', s);
     h.setAttribute('x', r.x + (c.includes('e') ? r.w : 0) - s / 2);
     h.setAttribute('y', r.y + (c.includes('s') ? r.h : 0) - s / 2);
@@ -770,7 +853,7 @@ function draw() {
 
 /* ---------- picking (geometry-based, zoom-aware tolerances) ---------- */
 function pickAt(p, exclude) {
-  const zIn = 8 / view.z, zOut = 14 / view.z, zEdge = 12 / view.z, zNode = 8 / view.z;
+  const zIn = 8 * tolK / view.z, zOut = 14 * tolK / view.z, zEdge = 12 * tolK / view.z, zNode = 8 * tolK / view.z;
   for (const n of nodes) {
     if (n.id === exclude) continue;
     const d = Math.hypot(p.x - n.x, p.y - n.y), rr = nodeR(n) + zNode;
@@ -842,9 +925,8 @@ function splitEdge(eid, pt) {
 
 /* ---------- arrows: swap / label ---------- */
 function swapEdge() {
-  if (!sel || sel.type !== 'edge') return;
-  const e = edges.find(x => x.id === sel.id); if (!e) return;
-  [e.from, e.to] = [e.to, e.from]; [e.fa, e.ta] = [e.ta, e.fa];
+  const es = selEdges(); if (!es.length) return;
+  es.forEach(e => { [e.from, e.to] = [e.to, e.from]; [e.fa, e.ta] = [e.ta, e.fa]; });
   scheduleDraw(); commit();
 }
 function editLabel(e) {
@@ -862,6 +944,7 @@ function editLabel(e) {
 
 /* ---------- selection / toolbar ---------- */
 const selItems = () => [...selSet].map(byId).filter(Boolean);
+const selBoxIds = () => [...selSet].filter(id => isBox(id));
 const selEdges = () => edges.filter(e => selSet.has(e.id));
 function syncSel() {
   for (const id in els) els[id].classList.toggle('sel', selSet.has(id));
@@ -881,19 +964,20 @@ const autoBoxHex = () => getComputedStyle(root).getPropertyValue('--box-bg').tri
 function updBar() {
   $('#undo').disabled = hp <= 0;
   $('#redo').disabled = hp >= hist.length - 1;
-  $('#del').disabled = selSet.size === 0;
+  $('#delbox').disabled = !selBoxIds().length; $('#delarrow').disabled = !selEdges().length;
   const es = selEdges(), colorable = selItems().filter(o => o.color !== undefined);
-  $('#swap').disabled = !(sel && sel.type === 'edge');
+  $('#swap').disabled = !selEdges().length;
   ['#ew', '#es', '#er'].forEach(q => $(q).disabled = !es.length);
   if (es.length) { $('#ew').value = es[0].w || 3; $('#es').value = es[0].style || 'solid'; $('#er').value = es[0].mode || 'avoid'; }
   $('#target').textContent = selSet.size > 1 ? `${selSet.size} selected` : !sel ? '' : {edge: 'Arrow', box: 'Box', node: 'Node'}[sel.type];
   const one = selSet.size === 1 && colorable.length === 1 ? colorable[0] : null;
-  document.querySelectorAll('.sw').forEach(q => {
+  document.querySelectorAll('#colors .sw').forEach(q => {
     q.classList.toggle('on', !!one && (one.color === null ? q.dataset.c === 'auto' : q.dataset.c === one.color));
-    q.disabled = !colorable.length; q.style.opacity = colorable.length ? 1 : .35;
+    const ed = $('#colors').classList.contains('editing') && q.classList.contains('cus');
+    q.disabled = !colorable.length && !ed; q.style.opacity = colorable.length || ed ? 1 : .35;
   });
-  $('#custom').disabled = !colorable.length;
-  if (one) $('#custom').value = one.color || autoBoxHex();
+  if (one && one.color) $('#custom').value = one.color;
+  $('#selcount').textContent = `Selecting ${selBoxIds().length} box${selBoxIds().length === 1 ? '' : 'es'}`;
   $('#empty').hidden = boxes.length > 0;
 }
 function applyColor(c, final = true) {
@@ -901,21 +985,98 @@ function applyColor(c, final = true) {
   items.forEach(o => { const b = isBox(o.id); o.color = c === 'auto' ? (b ? null : EDGE_DEFAULT) : c; if (b) styleBox(o); });
   scheduleDraw(); if (final) commit(); else updBar();
 }
-PALETTE.forEach(c => {
-  const b = document.createElement('button'); b.className = 'sw'; b.dataset.c = c;
+const swatch = (c, cls) => {
+  const b = document.createElement('button'); b.className = cls; b.dataset.c = c;
   b.style.background = c === 'auto' ? 'linear-gradient(135deg,#ffffff 50%,#2b3140 50%)' : c;
-  b.title = c === 'auto' ? 'Auto (follows theme)' : c;
-  b.addEventListener('click', () => applyColor(c)); $('#colors').appendChild(b);
-});
-$('#custom').addEventListener('input', e => applyColor(e.target.value, false));
-$('#custom').addEventListener('change', e => applyColor(e.target.value, true));
+  b.title = c === 'auto' ? 'Auto (follows theme)' : c; return b;
+};
+function renderPalette() {
+  $('#colors').innerHTML = ''; $('#selcolors').innerHTML = '';
+  palette.forEach(c => {
+    const cus = c !== 'auto' && !PALETTE.includes(c.toLowerCase());
+    const a = swatch(c, 'sw' + (cus ? ' cus' : ''));
+    a.addEventListener('click', () => {
+      if ($('#colors').classList.contains('editing') && cus) { palette = palette.filter(x => x !== c); persist(); renderPalette(); return; }
+      applyColor(c);
+    });
+    $('#colors').appendChild(a);
+    const q = swatch(c, 'sw'); q.addEventListener('click', () => { selectByColor(c); closePops(); }); $('#selcolors').appendChild(q);
+  });
+  const anyCus = palette.some(c => c !== 'auto' && !PALETTE.includes(c.toLowerCase()));
+  $('#editcolors').hidden = !anyCus;
+  if (!anyCus) { $('#colors').classList.remove('editing'); }
+  $('#editcolors').textContent = $('#colors').classList.contains('editing') ? 'Done removing' : 'Remove custom colors';
+  updBar();
+}
+function selectByColor(c) {
+  const ids = [];
+  boxes.forEach(b => { if ((c === 'auto' ? b.color === null : (b.color || '').toLowerCase() === c.toLowerCase())) ids.push(b.id); });
+  if (c !== 'auto') edges.forEach(e => { if ((e.color || '').toLowerCase() === c.toLowerCase()) ids.push(e.id); });
+  selectSet(ids);
+}
+function sanitizePalette(list, extra) {
+  if (Array.isArray(list)) extra = [];   // saved list is authoritative: a removed color stays removed
+  const out = ['auto'], seen = new Set(['auto']);
+  [...(Array.isArray(list) && list.length ? list : PALETTE.slice(1)), ...extra].forEach(c => {
+    if (typeof c !== 'string' || !/^#[0-9a-f]{6}$/i.test(c)) return;
+    const k = c.toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push(k); }
+  });
+  return out;
+}
+$('#editcolors').onclick = () => { $('#colors').classList.toggle('editing'); renderPalette(); };
+$('#addcolor').onclick = () => {
+  const c = $('#custom').value.toLowerCase();
+  $('#colors').classList.remove('editing');
+  if (!palette.some(x => x.toLowerCase() === c)) { palette.push(c); persist(); }
+  renderPalette(); applyColor(c);
+};
 $('#ew').addEventListener('input', e => { selEdges().forEach(x => { x.w = +e.target.value; }); scheduleDraw(); });
 $('#ew').addEventListener('change', () => commit());
 $('#es').addEventListener('change', e => { selEdges().forEach(x => { x.style = e.target.value; }); scheduleDraw(); commit(); });
 $('#er').addEventListener('change', e => { selEdges().forEach(x => { x.mode = e.target.value; }); scheduleDraw(); commit(); });
 $('#undo').onclick = undo; $('#redo').onclick = redo;
-$('#del').onclick = () => { if (selSet.size) delObjs([...selSet]); };
+$('#delbox').onclick = () => { const ids = selBoxIds(); if (ids.length) delObjs(ids); closePops(); };
+$('#delarrow').onclick = () => { const ids = selEdges().map(e => e.id); if (ids.length) delObjs(ids); closePops(); };
 $('#swap').onclick = swapEdge;
+$('#expall').onclick = () => { boxes.forEach(b => setCollapsed(b, false)); scheduleDraw(); commit(); closePops(); };
+$('#colall').onclick = () => { boxes.forEach(b => setCollapsed(b, true)); scheduleDraw(); commit(); closePops(); };
+$('#selall').onclick = () => { blurActive(); selectEverything(); closePops(); };
+$('#selinv').onclick = () => {
+  blurActive();
+  selectSet([...boxes.map(b => b.id), ...nodes.map(n => n.id), ...edges.map(e => e.id)].filter(id => !selSet.has(id))); closePops();
+};
+$('#selcolbtn').onclick = () => { const r = $('#selcolors'); r.hidden = !r.hidden; placePop($('#pop-select')); };
+$('#selcustom').onclick = () => { closePops(); enterSelect(); };
+$('#seldone').onclick = () => exitSelect(true);
+$('#selcancel').onclick = () => exitSelect(false);
+function enterSelect() {
+  blurActive(); selectMode = true; prevSel = [...selSet];
+  selectSet(selBoxIds()); document.body.classList.add('selmode'); updBar();
+}
+function exitSelect(keep) {
+  if (!selectMode) return;
+  selectMode = false; document.body.classList.remove('selmode');
+  if (!keep) selectSet(prevSel.filter(id => byId(id)));
+  updBar();
+}
+/* ---------- menus ---------- */
+function closePops() { document.querySelectorAll('.pop.open').forEach(q => q.classList.remove('open')); document.querySelectorAll('.mb.open').forEach(q => q.classList.remove('open')); }
+function placePop(pop) {
+  const btn = document.querySelector('.mb.open'); if (!btn || !pop.classList.contains('open')) return;
+  const r = btn.getBoundingClientRect(), w = pop.offsetWidth;
+  pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px'; pop.style.top = (r.bottom + 6) + 'px';
+}
+document.querySelectorAll('.mb').forEach(btn => btn.addEventListener('click', () => {
+  const pop = $('#pop-' + btn.dataset.m), was = pop.classList.contains('open');
+  closePops(); if (was) return;
+  if (selectMode) return;
+  btn.classList.add('open'); pop.classList.add('open'); placePop(pop);
+}));
+document.querySelectorAll('.pop button').forEach(btn => btn.addEventListener('click', () => {
+  if (btn.id === 'undo' || btn.id === 'redo' || btn.id === 'save' || btn.id === 'load' || btn.id === 'reset' || btn.id === 'install' || btn.id === 'swap') closePops();
+}));
+document.addEventListener('pointerdown', e => { if (!e.target.closest('.pop, .mb')) closePops(); }, true);
+window.addEventListener('resize', () => document.querySelectorAll('.pop.open').forEach(placePop));
 $('#reset').onclick = () => { view = {x: 0, y: 0, z: 1}; applyView(); };
 
 /* ---------- rebuild / load / save ---------- */
@@ -937,7 +1098,7 @@ function load(d) {
     title: String(b.title || 'Untitled'), color: okc(b.color) && !(legacy && isDef(b.color)) ? b.color : null,
     lines: Array.isArray(b.lines) ? b.lines.map(String) : [], collapsed: !!b.collapsed
   }));
-  const seenT = new Set();
+  const seenT = new Set();   // (palette is set after edges are built)
   boxes.forEach(b => {
     let t = cleanT(b.title) || 'Untitled', i = 2;
     while (seenT.has(normT(t))) t = `${cleanT(b.title) || 'Untitled'} ${i++}`;
@@ -959,11 +1120,12 @@ function load(d) {
     w: Math.min(12, Math.max(1, +e.w || 3)), style: ['solid', 'dashed', 'dotted'].includes(e.style) ? e.style : 'solid',
     mode: e.mode === 'direct' ? 'direct' : 'avoid'
   }));
+  palette = sanitizePalette(d.colors, [...boxes.map(b => b.color), ...edges.map(e => e.color)]); renderPalette();
   if (d.view && isFinite(d.view.z) && d.view.z > 0) view = {x: +d.view.x || 0, y: +d.view.y || 0, z: +d.view.z};
   selSet = new Set(); sel = null; rebuild(); normalize(); applyView(); updBar();
 }
 $('#save').onclick = async () => {
-  const text = JSON.stringify({...JSON.parse(snap()), view, ver: 5}, null, 2);
+  const text = JSON.stringify({...JSON.parse(snap()), view, colors: palette, ver: 5}, null, 2);
   if (window.showSaveFilePicker) {   // Chrome/Edge: real "Save as" dialog with a custom name
     try {
       const h = await showSaveFilePicker({suggestedName: 'ideamap.json', types: [{description: 'Idea Map', accept: {'application/json': ['.json']}}]});
@@ -999,7 +1161,7 @@ function startMove(e, soloId) {
 }
 
 stage.addEventListener('contextmenu', e => e.preventDefault());
-stage.addEventListener('mousedown', e => {
+function onDown(e) {
   if (e.target.closest('.edge-input')) return;
   if (e.button === 1 || e.button === 2 || (e.button === 0 && space)) {
     e.preventDefault();
@@ -1023,6 +1185,12 @@ stage.addEventListener('mousedown', e => {
   }
   const p = toWorld(e.clientX, e.clientY), pk = pickAt(p);
   setHover(null);
+  if (selectMode) {   // tap boxes to toggle them; empty space pans
+    e.preventDefault(); blurActive();
+    if (pk && (pk.type === 'box' || pk.type === 'border')) toggleSel(pk.id);
+    else drag = {t: 'pan', sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y};
+    return;
+  }
   if (pk && pk.type === 'node') {
     e.preventDefault(); blurActive();
     if (e.shiftKey) { toggleSel(pk.id); return; }
@@ -1044,7 +1212,7 @@ stage.addEventListener('mousedown', e => {
     if (e.shiftKey) { e.preventDefault(); blurActive(); toggleSel(pk.id); return; }
     const multi = selSet.size > 1 && selSet.has(pk.id);
     if (!multi) select({type: 'box', id: pk.id});
-    if (e.target.isContentEditable || e.target.closest('.x,.addline')) return;
+    if (e.target.isContentEditable || (!e.touch && e.target.closest('.x,.addline'))) return;   // on touch these still start a drag; a plain tap fires their click
     e.preventDefault(); blurActive();
     startMove(e, multi ? pk.id : null);
     return;
@@ -1062,18 +1230,24 @@ stage.addEventListener('mousedown', e => {
   }
   e.preventDefault(); blurActive();
   const gs = getSelection(); if (gs) gs.removeAllRanges();
+  if (e.touch) {   // touch: empty-space drag pans (multi-select mode keeps the selection)
+    if (!e.shiftKey) select(null);
+    drag = {t: 'pan', sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y};
+    return;
+  }
   select(null);
   drag = {t: 'new', p, sx: e.clientX, sy: e.clientY};
-});
+}
+stage.addEventListener('mousedown', e => { if (!fromTouch()) onDown(e); });
 
 function srcPoint(src) {
   if (src.type === 'box') { const b = boxes.find(x => x.id === src.id); return b && els[b.id] ? anchorPt(R(b), src.fa) : null; }
   return src.pt;
 }
 
-window.addEventListener('mousemove', e => {
+function onMove(e) {
   if (!drag) {
-    if (e.target.closest && (e.target.closest('#bar') || e.target.closest('.edge-input'))) { setHover(null); return; }
+    if (e.target.closest && (e.target.closest('#bar') || e.target.closest('.pop') || e.target.closest('#selpop') || e.target.closest('.edge-input'))) { setHover(null); return; }
     const pk = (e.target.classList && (e.target.classList.contains('hnd') || e.target.classList.contains('rsz'))) ? null : pickAt(toWorld(e.clientX, e.clientY));
     setHover(pk);
     stage.style.cursor = space ? 'grab' : pk && (pk.type === 'border' || pk.type === 'edge') ? 'crosshair' : pk && pk.type === 'node' ? 'move' : '';
@@ -1131,9 +1305,10 @@ window.addEventListener('mousemove', e => {
     drag.tg = tg && (tg.type === 'edge' || tg.type === 'node' || tg.type === 'box' || tg.type === 'border') ? tg : null;
     markDrops(drag.tg); setHover(drag.tg);
   }
-});
+}
+window.addEventListener('mousemove', e => { if (!fromTouch()) onMove(e); });
 
-window.addEventListener('mouseup', e => {
+function onUp(e) {
   if (!drag) return;
   const d = drag; drag = null;
   stage.style.cursor = space ? 'grab' : ''; document.body.style.cursor = '';
@@ -1146,13 +1321,7 @@ window.addEventListener('mouseup', e => {
     const c = toWorld(e.clientX, e.clientY);
     const x1 = snapG(Math.min(d.p.x, c.x)), y1 = snapG(Math.min(d.p.y, c.y));
     const x2 = snapG(Math.max(d.p.x, c.x)), y2 = snapG(Math.max(d.p.y, c.y));
-    const b = {
-      id: uid(), x: x1, y: y1, w: Math.max(x2 - x1, 160), h: Math.max(y2 - y1, 60),
-      title: '', color: defaultBoxColor(), lines: [], collapsed: false
-    };
-    boxes.push(b); mkBox(b); els[b.id].dataset.fresh = '1';
-    select({type: 'box', id: b.id});
-    setTimeout(() => editTitle(b), 0);
+    newBox(x1, y1, Math.max(x2 - x1, 160), Math.max(y2 - y1, 60));
   } else if (d.t === 'link') {
     if (tmp) { tmp.remove(); tmp = null; }
     markDrops(null); setHover(null);
@@ -1175,7 +1344,78 @@ window.addEventListener('mouseup', e => {
     const ed = {id: uid(), from: fromId, fa, to: toId, ta, color: EDGE_DEFAULT, label: '', w: 3, style: 'solid', mode: 'avoid'};
     edges.push(ed); select({type: 'edge', id: ed.id}); commit();
   }
+}
+window.addEventListener('mouseup', e => { if (!fromTouch()) onUp(e); });
+function newBox(x, y, w, h) {
+  const b = {id: uid(), x, y, w, h, title: '', color: defaultBoxColor(), lines: [], collapsed: false};
+  boxes.push(b); mkBox(b); els[b.id].dataset.fresh = '1';
+  select({type: 'box', id: b.id});
+  setTimeout(() => editTitle(b), 0);
+}
+
+/* ---------- touch: one finger acts like the mouse (empty space pans), two fingers pan + pinch-zoom,
+   double-tap creates a box / renames a title / edits an arrow label ---------- */
+const touches = new Map();
+let pinch = null, lastTap = null;
+const pseudo = e => ({clientX: e.clientX, clientY: e.clientY, button: 0, shiftKey: false, target: e.target, touch: true, preventDefault() {}});
+function cancelDrag() {
+  const d = drag; if (!d) return; drag = null;
+  if (d.t === 'move') d.its.forEach(it => { it.o.x = it.ox; it.o.y = it.oy; if (it.box && els[it.o.id]) { els[it.o.id].style.left = it.o.x + 'px'; els[it.o.id].style.top = it.o.y + 'px'; } });
+  if (tmp) { tmp.remove(); tmp = null; }
+  markDrops(null); setHover(null); rb.style.display = 'none';
+  document.body.classList.remove('linking'); document.body.style.cursor = '';
+  scheduleDraw();
+}
+const twoTouches = () => { const [a, b] = [...touches.values()]; return b ? {a, b, d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2} : null; };
+function doubleTap(x, y, target) {
+  if (selectMode) return;
+  const t = target.closest && target.closest('.title');
+  if (t) { const b = boxes.find(q => q.id === t.closest('.box').dataset.id); if (b) editTitle(b); return; }
+  const p = toWorld(x, y), pk = pickAt(p);
+  if (pk && pk.type === 'edge') { const ed = edges.find(q => q.id === pk.id); if (ed) editLabel(ed); }
+  else if (!pk) newBox(snapG(p.x), snapG(p.y), 160, 60);
+}
+stage.addEventListener('pointerdown', e => {
+  tolK = e.pointerType === 'touch' ? 1.75 : 1;
+  document.body.classList.toggle('touch', e.pointerType === 'touch');
+  if (e.pointerType !== 'touch') return;
+  lastTouch = Date.now();
+  if (e.target.closest('.edge-input')) return;
+  touches.set(e.pointerId, {x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY});
+  if (touches.size === 2) {
+    cancelDrag(); const t = twoTouches(); pinch = {d0: t.d, mx: t.mx, my: t.my, v: {...view}}; return;
+  }
+  if (touches.size === 1) onDown(pseudo(e));
 });
+window.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'touch') return;
+  lastTouch = Date.now();
+  const t = touches.get(e.pointerId); if (!t) return;
+  t.x = e.clientX; t.y = e.clientY;
+  if (pinch) {
+    const q = twoTouches(); if (!q) return;
+    const nz = Math.min(3, Math.max(0.2, pinch.v.z * q.d / pinch.d0)), k = nz / pinch.v.z;
+    view.z = nz; view.x = q.mx - (pinch.mx - pinch.v.x) * k; view.y = q.my - (pinch.my - pinch.v.y) * k;
+    applyView(); return;
+  }
+  if (drag) onMove(pseudo(e));
+});
+const touchEnd = e => {
+  if (e.pointerType !== 'touch') return;
+  lastTouch = Date.now();
+  const t = touches.get(e.pointerId); if (!t) return;
+  touches.delete(e.pointerId);
+  if (pinch) { if (!touches.size) pinch = null; return; }
+  if (e.type === 'pointercancel') { cancelDrag(); return; }
+  if (drag) onUp(pseudo(e));
+  if (Math.hypot(e.clientX - t.x0, e.clientY - t.y0) < 10 && !e.target.closest('.x,.addline,.cbtn')) {
+    const now = Date.now();
+    if (lastTap && now - lastTap.t < 380 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) { lastTap = null; doubleTap(e.clientX, e.clientY, e.target); }
+    else lastTap = {t: now, x: e.clientX, y: e.clientY};
+  }
+};
+window.addEventListener('pointerup', touchEnd);
+window.addEventListener('pointercancel', touchEnd);
 
 stage.addEventListener('wheel', e => {
   e.preventDefault();
@@ -1186,6 +1426,7 @@ stage.addEventListener('wheel', e => {
 }, {passive: false});
 
 stage.addEventListener('dblclick', e => {
+  if (fromTouch() || selectMode) return;
   const t = e.target.closest('.title');
   if (t) { const b = boxes.find(x => x.id === t.closest('.box').dataset.id); if (b) editTitle(b); return; }
   const pk = pickAt(toWorld(e.clientX, e.clientY));
@@ -1208,12 +1449,12 @@ window.addEventListener('keydown', e => {
   else if (mod && k === 'y') { e.preventDefault(); redo(); }
   else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); if (selSet.size) delObjs([...selSet]); }
   else if (e.key === 'Enter' && sel && sel.type === 'edge') { const ed = edgeSel(); if (ed) editLabel(ed); }
-  else if (e.key === 'Escape') select(null);
+  else if (e.key === 'Escape') { if (selectMode) exitSelect(false); else { closePops(); select(null); } }
 });
 window.addEventListener('keyup', e => { if (e.code === 'Space') { space = false; if (!drag) stage.style.cursor = ''; } });
 
 /* ---------- init ---------- */
-applyTheme();
+applyTheme(); renderPalette();
 try {
   let raw = localStorage.getItem(KEY);
   for (const k of OLDKEYS) if (!raw) raw = localStorage.getItem(k);
