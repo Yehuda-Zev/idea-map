@@ -128,7 +128,7 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
   <button id="install" title="Install as an app" hidden>&#11015; Install</button>
   <input type="file" id="file" accept=".json,application/json" hidden>
 </div>
-<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; build 7</div>
+<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; build 8</div>
 
 <script>
 (() => {
@@ -504,7 +504,7 @@ function astar(Sp, sDir, Ep, eDir, obst, m) {
     }
     return [f, s];
   };
-  const TURN = 0.02, EPS = 0.0002, midX = (Sp.x + Ep.x) / 2, midY = (Sp.y + Ep.y) / 2;
+  const TURN = 0.2, EPS = 0.0002, midX = (Sp.x + Ep.x) / 2, midY = (Sp.y + Ep.y) / 2;
   const h = c => Math.abs(c % W - ex) + Math.abs(((c / W) | 0) - ey);
   for (let d = 0; d < 4; d++) if (sDir < 0 || d === sDir) { gs[si * 4 + d] = 0; push(h(si), si * 4 + d); }
   let best = Infinity, bestS = -1;
@@ -537,26 +537,14 @@ function astar(Sp, sDir, Ep, eDir, obst, m) {
   for (let st = bestS; st !== -1; st = from[st]) { const c = st >> 2; out.push({x: x0 + (c % W) * G, y: y0 + ((c / W) | 0) * G}); }
   return out.reverse();
 }
-const hz = d => d === 0 || d === 2;
-const dsign = d => (d === 0 || d === 1) ? 1 : -1;
-/* Canonical orthogonal route from stub S (heading sd) to stub E (arriving with heading ed).
-   Same-axis ends -> a Z whose jog sits at the midpoint of the run; perpendicular ends -> one forced corner.
-   Returns null when the headings can't be satisfied (caller falls back to the A* search). */
-function midRoute(S, sd, E, ed) {
-  const dx = E.x - S.x, dy = E.y - S.y, sg = Math.sign;
-  const sH = sd < 0 ? null : hz(sd), eH = ed < 0 ? null : hz(ed);
-  if (sH !== null && eH !== null && sH !== eH) {
-    const C = sH ? {x: E.x, y: S.y} : {x: S.x, y: E.y};
-    const s1 = sH ? dx : dy, s2 = sH ? dy : dx;
-    if ((s1 && sg(s1) !== dsign(sd)) || (s2 && sg(s2) !== dsign(ed))) return null;
-    return [S, C, E];
+/* helpers for choosing among candidate orthogonal routes */
+function dedupe(p) { return p.filter((q, i) => !i || Math.abs(q.x - p[i - 1].x) > .01 || Math.abs(q.y - p[i - 1].y) > .01); }
+function reverses(p) {   // any 180-degree doubling back?
+  for (let i = 1; i < p.length - 1; i++) {
+    const ax = p[i].x - p[i - 1].x, ay = p[i].y - p[i - 1].y, bx = p[i + 1].x - p[i].x, by = p[i + 1].y - p[i].y;
+    if (ax * bx + ay * by < 0 && Math.abs(ax * by - ay * bx) < .01) return true;
   }
-  const h = sH === null && eH === null ? Math.abs(dx) >= Math.abs(dy) : (sH === null ? eH : sH);
-  const t = h ? dx : dy;
-  if (t && ((sd >= 0 && sg(t) !== dsign(sd)) || (ed >= 0 && sg(t) !== dsign(ed)))) return null;
-  if (h) { const mx = snapG((S.x + E.x) / 2); return [S, {x: mx, y: S.y}, {x: mx, y: E.y}, E]; }
-  const my = snapG((S.y + E.y) / 2);
-  return [S, {x: S.x, y: my}, {x: E.x, y: my}, E];
+  return false;
 }
 function hitsAny(pts, obst) {
   const P = 8;
@@ -567,12 +555,39 @@ function hitsAny(pts, obst) {
   }
   return false;
 }
+/* Z routes with the jog on every grid line between S and E, the one nearest the middle first
+   (so if a box blocks the midpoint, the jog slides to the closest free line) */
+function zSweep(S, E, horiz) {
+  const a = horiz ? S.x : S.y, b = horiz ? E.x : E.y, m = (a + b) / 2, vs = [];
+  for (let v = Math.ceil(Math.min(a, b) / G) * G; v <= Math.max(a, b) + 1e-6; v += G) vs.push(v);
+  vs.sort((p, q) => Math.abs(p - m) - Math.abs(q - m));
+  return vs.slice(0, 80).map(v => horiz ? [S, {x: v, y: S.y}, {x: v, y: E.y}, E] : [S, {x: S.x, y: v}, {x: E.x, y: v}, E]);
+}
 function computeRoute(A, B, obst) {
   const Sp = A.box ? stubPt(A.P, A.dir) : {x: snapG(A.P.x), y: snapG(A.P.y)};
   const Ep = B.box ? stubPt(B.P, B.dir) : {x: snapG(B.P.x), y: snapG(B.P.y)};
   const sDir = A.box ? A.dir : -1, eDir = B.box ? (B.dir + 2) & 3 : -1;
-  const z = midRoute(Sp, sDir, Ep, eDir);
-  if (z && !hitsAny(z, obst)) return simplify([A.P, ...z, B.P]);
+  /* Candidates all have the same (shortest) length; pick the one with the fewest turns.
+     Ties go to the earlier candidate: Z-shapes (jog at the midpoint) come before L-shapes,
+     so an L only wins when it needs strictly fewer turns. */
+  const dx = Ep.x - Sp.x, dy = Ep.y - Sp.y;
+  const horiz = Math.abs(dx) >= Math.abs(dy), cands = [];
+  if (!dx || !dy) cands.push([Sp, Ep]);
+  const Zh = zSweep(Sp, Ep, true), Zv = zSweep(Sp, Ep, false);
+  cands.push(...(horiz ? [...Zh, ...Zv] : [...Zv, ...Zh]));
+  if (dx && dy) {
+    const Lh = [Sp, {x: Ep.x, y: Sp.y}, Ep], Lv = [Sp, {x: Sp.x, y: Ep.y}, Ep];
+    cands.push(...(horiz ? [Lh, Lv] : [Lv, Lh]));
+  }
+  let bestPts = null;
+  for (const c of cands) {
+    if (hitsAny(c, obst)) continue;
+    const raw = dedupe([A.P, ...c, B.P]);
+    if (reverses(raw)) continue;
+    const pts = simplify(raw);
+    if (!bestPts || pts.length < bestPts.length) bestPts = pts;
+  }
+  if (bestPts) return bestPts;
   let path = null;
   if (obst.length) path = astar(Sp, sDir, Ep, eDir, obst, 6) || astar(Sp, sDir, Ep, eDir, obst, 25);
   if (!path) path = astar(Sp, sDir, Ep, eDir, [], 3);
