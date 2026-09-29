@@ -17,6 +17,9 @@
 }
 :root[data-theme=dark]{color-scheme:dark;--bg:#14161a;--panel:#1e2128;--line:#2f343d;--txt:#e6e8ec;--acc:#5b9dff;--dot:#2a2e36;--btn:#2a2f39;--btnh:#343b48;--shadow:rgba(0,0,0,.4);--ok:#7cfc9a}
 *{box-sizing:border-box}
+:root{--box-bg:#ffffff;--box-fg:#14161a}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--box-bg:#2b3140;--box-fg:#f2f3f5}}
+:root[data-theme=dark]{--box-bg:#2b3140;--box-fg:#f2f3f5}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif}
 #stage{position:fixed;inset:0;background-image:radial-gradient(var(--dot) 1.2px,transparent 1.2px);background-size:20px 20px;-webkit-user-select:none;user-select:none}
 #world{position:absolute;left:0;top:0;transform-origin:0 0}
@@ -69,7 +72,7 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
 #bar{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:6px;align-items:center;flex-wrap:nowrap;width:max-content;
   padding:6px 10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px var(--shadow)}
 #bar>*{flex-shrink:0}
-@media (max-width:1180px){#bar{flex-wrap:wrap;justify-content:center;width:auto;left:2vw;right:2vw;transform:none}}
+@media (max-width:1280px){#bar{flex-wrap:wrap;justify-content:center;width:auto;left:2vw;right:2vw;transform:none}}
 #bar button{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;font:inherit}
 #bar button:hover:not(:disabled){background:var(--btnh)}
 #bar button:disabled{opacity:.35;cursor:default}
@@ -82,6 +85,12 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
 #custom{width:28px;height:26px;padding:0;border:none;background:none;cursor:pointer}
 #custom:disabled{opacity:.35}
 #target{font-size:12px;opacity:.7}
+.title.bad{outline:2px solid #e5484d;outline-offset:1px}
+.title.shake{animation:shake .25s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);z-index:120;max-width:90vw;padding:7px 14px;border-radius:8px;
+  background:var(--panel);color:var(--txt);border:1px solid var(--line);box-shadow:0 6px 24px var(--shadow);font-size:13px}
+#toast[hidden]{display:none}
 #hint{position:fixed;left:12px;bottom:10px;z-index:90;font-size:12px;opacity:.6;max-width:70vw;pointer-events:none}
 #empty{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.4;font-size:18px}
 #empty[hidden]{display:none}
@@ -96,6 +105,7 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
   </div>
 </div>
 <div id="empty">Drag on empty space to create your first box</div>
+<div id="toast" hidden></div>
 <div id="bar">
   <button id="undo" title="Undo (Ctrl+Z)">&#8630;</button>
   <button id="redo" title="Redo (Ctrl+Y)">&#8631;</button>
@@ -117,22 +127,22 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
   <button id="install" title="Install as an app" hidden>&#11015; Install</button>
   <input type="file" id="file" accept=".json,application/json" hidden>
 </div>
-<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Del: delete</div>
+<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete</div>
 
 <script>
 (() => {
 const $ = s => document.querySelector(s);
 const stage = $('#stage'), world = $('#world'), eg = $('#eg'), ng = $('#ng'), rb = $('#rb'), root = document.documentElement;
 const NS = 'http://www.w3.org/2000/svg';
-const PALETTE = ['#2b3140','#ffffff','#9aa4b5','#3b6fd4','#2f9e6f','#c98a1b','#d1495b','#8a5cd6','#e8e8ea'];
+const PALETTE = ['auto','#2b3140','#ffffff','#9aa4b5','#3b6fd4','#2f9e6f','#c98a1b','#d1495b','#8a5cd6','#e8e8ea'];
 const EDGE_DEFAULT = '#9aa4b5';
-const KEY = 'ideamap-v3', OLDKEYS = ['ideamap-v2', 'ideamap-v1'], TKEY = 'ideamap-theme';
+const KEY = 'ideamap-v4', OLDKEYS = ['ideamap-v3', 'ideamap-v2', 'ideamap-v1'], TKEY = 'ideamap-theme';
 const G = 20;                 // grid size (world px)
 const HOLD_MS = 2000;
 const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];   // 0 right, 1 down, 2 left, 3 up
 
 let boxes = [], nodes = [], edges = [], view = {x:0, y:0, z:1};
-let sel = null, drag = null, space = false, zTop = 1, tmp = null, hover = null;
+let sel = null, selSet = new Set(), drag = null, space = false, zTop = 1, tmp = null, hover = null;
 const els = {}, gEls = {}, nEls = {};
 let routes = {}, ends = {};
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-3);
@@ -148,13 +158,23 @@ const isEditing = () => {
 const byId = id => boxes.find(b => b.id === id) || nodes.find(n => n.id === id) || edges.find(e => e.id === id);
 const isBox = id => boxes.some(b => b.id === id);
 const isNode = id => nodes.some(n => n.id === id);
+const typeOf = id => isBox(id) ? 'box' : isNode(id) ? 'node' : 'edge';
+const itemOf = id => ({type: typeOf(id), id});
+const cleanT = s => s.trim().replace(/\s+/g, ' ');
+const normT = s => cleanT(s).toLowerCase();
+const titleTaken = (t, exceptId) => boxes.some(b => b.id !== exceptId && normT(b.title) === normT(t));
+function uniqueTitle(base, exceptId) { let t = base, i = 2; while (titleTaken(t, exceptId)) t = `${base} ${i++}`; return t; }
+let toastTm = 0;
+function showToast(msg, sticky) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTm); if (!sticky) toastTm = setTimeout(() => { t.hidden = true; }, 3500);
+}
+function hideToast() { clearTimeout(toastTm); $('#toast').hidden = true; }
 
 /* ---------- theme ---------- */
-const sysDark = matchMedia('(prefers-color-scheme: dark)');
 let themePref = 'auto';
 try { themePref = localStorage.getItem(TKEY) || 'auto'; } catch (_) {}
 if (!['auto', 'light', 'dark'].includes(themePref)) themePref = 'auto';
-const isDark = () => themePref === 'auto' ? sysDark.matches : themePref === 'dark';
 function applyTheme() {
   if (themePref === 'auto') root.removeAttribute('data-theme'); else root.dataset.theme = themePref;
   $('#theme').textContent = {auto: '◐ Auto', light: '☀ Light', dark: '☾ Dark'}[themePref];
@@ -164,7 +184,7 @@ $('#theme').onclick = () => {
   try { localStorage.setItem(TKEY, themePref); } catch (_) {}
   applyTheme();
 };
-const defaultBoxColor = () => isDark() ? '#2b3140' : '#ffffff';
+const defaultBoxColor = () => null;   // null = auto: follows the theme
 
 /* ---------- text-editing helpers ---------- */
 function editable(el) {
@@ -213,7 +233,7 @@ function normalize() {
     }
   }
   if (changed) {
-    if (sel && !byId(sel.id)) sel = null;
+    pruneSel();
     syncNodeEls(); scheduleDraw();
   }
   return changed;
@@ -226,7 +246,7 @@ const snap = () => JSON.stringify({
   nodes, edges
 });
 function persist() {
-  try { localStorage.setItem(KEY, JSON.stringify({...JSON.parse(snap()), view})); } catch (_) {}
+  try { localStorage.setItem(KEY, JSON.stringify({...JSON.parse(snap()), view, ver: 4})); } catch (_) {}
 }
 function commit() {
   clearTimeout(tm);
@@ -240,7 +260,7 @@ function commit() {
 const schedule = () => { clearTimeout(tm); tm = setTimeout(commit, 500); };
 function restore(s) {
   const d = JSON.parse(s);
-  boxes = d.boxes; nodes = d.nodes || []; edges = d.edges; sel = null; rebuild(); updBar();
+  boxes = d.boxes; nodes = d.nodes || []; edges = d.edges; selSet = new Set(); sel = null; rebuild(); updBar();
 }
 function undo() { if (hp > 0) { hp--; restore(hist[hp]); persist(); } }
 function redo() { if (hp < hist.length - 1) { hp++; restore(hist[hp]); persist(); } }
@@ -262,7 +282,7 @@ function styleBox(b) {
   const el = els[b.id];
   Object.assign(el.style, {
     left: b.x + 'px', top: b.y + 'px', width: b.w + 'px', minHeight: b.collapsed ? '0px' : b.h + 'px',
-    background: b.color, color: ink(b.color)
+    background: b.color || 'var(--box-bg)', color: b.color ? ink(b.color) : 'var(--box-fg)'
   });
   el.classList.toggle('col', !!b.collapsed);
   el.querySelector('.cbtn').textContent = b.collapsed ? '▸' : '▾';
@@ -315,15 +335,31 @@ function mkBox(b) {
   world.appendChild(el); els[b.id] = el;
   const t = el.querySelector('.title');
   t.contentEditable = 'false'; t.textContent = b.title;
+  t.addEventListener('input', () => {
+    const v = cleanT(t.textContent), bad = !!v && titleTaken(v, b.id);
+    t.classList.toggle('bad', bad);
+    if (bad) showToast(`"${v}" is already used — box titles must be unique`, true); else hideToast();
+  });
   t.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); t.blur(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (t.classList.contains('bad')) { t.classList.remove('shake'); void t.offsetWidth; t.classList.add('shake'); return; }
+      t.blur();
+    } else if (e.key === 'Escape') { e.preventDefault(); t.dataset.cancel = '1'; t.blur(); }
   });
   t.addEventListener('focusout', () => {
-    t.contentEditable = 'false';
-    const v = t.textContent.trim();
-    if (!v && el.dataset.fresh) { delObjs([b.id], true); return; }
-    b.title = v || 'Untitled'; t.textContent = b.title;
-    delete el.dataset.fresh; commit();
+    t.contentEditable = 'false'; t.classList.remove('bad', 'shake'); hideToast();
+    const cancel = t.dataset.cancel; delete t.dataset.cancel;
+    let v = cleanT(t.textContent); const fresh = !!el.dataset.fresh;
+    if (cancel || !v) {
+      if (fresh) { delObjs([b.id], true); return; }
+      t.textContent = b.title; return;
+    }
+    if (titleTaken(v, b.id)) {
+      if (fresh) { const u = uniqueTitle(v, b.id); showToast(`"${v}" was taken — named it "${u}"`); v = u; }
+      else { showToast(`"${v}" is already used — kept "${b.title}"`); t.textContent = b.title; return; }
+    }
+    b.title = v; t.textContent = v; delete el.dataset.fresh; commit();
   });
   el.querySelector('.addline').addEventListener('click', () => {
     const r = mkRow(b, ''); el.querySelector('.lines').appendChild(r); r.firstChild.focus();
@@ -355,8 +391,8 @@ function delObjs(ids, silent) {
   boxes = boxes.filter(b => !rm.has(b.id));
   nodes = nodes.filter(n => !rm.has(n.id));
   edges = edges.filter(e => !rm.has(e.id) && !rm.has(e.from) && !rm.has(e.to));
-  if (sel && rm.has(sel.id)) sel = null;
-  syncNodeEls(); scheduleDraw(); updBar();
+  pruneSel();
+  syncNodeEls(); scheduleDraw();
   if (!silent) commit(); else normalize();
 }
 
@@ -572,7 +608,7 @@ function draw() {
     if (!rc || rc.key !== key) { rc = routes[e.id] = {key, pts: computeRoute(A, B, direct ? [] : obst)}; }
     live.add(e.id);
     const g = gEls[e.id] || mkEdgeG(e);
-    g.classList.toggle('sel', !!sel && sel.id === e.id);
+    g.classList.toggle('sel', selSet.has(e.id));
     const w = e.w || 3, hw = w + hoverK('edge', e.id) * 5;
     let pts = rc.pts.map(p => ({...p}));
     const head = g.querySelector('.head');
@@ -602,7 +638,7 @@ function draw() {
     c.setAttribute('cx', n.x); c.setAttribute('cy', n.y);
     c.setAttribute('r', nodeR(n) + hoverK('node', n.id) * 3);
     c.setAttribute('fill', ce ? ce.color : EDGE_DEFAULT);
-    c.classList.toggle('sel', !!sel && sel.id === n.id);
+    c.classList.toggle('sel', selSet.has(n.id));
   });
 
   const E = sel && sel.type === 'edge' && ends[sel.id];
@@ -715,49 +751,60 @@ function editLabel(e) {
 }
 
 /* ---------- selection / toolbar ---------- */
-function curItem() {
-  if (!sel || sel.type === 'node') return null;
-  return sel.type === 'box' ? boxes.find(b => b.id === sel.id) : edges.find(e => e.id === sel.id);
-}
-function select(s) {
-  sel = s;
-  for (const id in els) els[id].classList.toggle('sel', !!s && s.type === 'box' && s.id === id);
-  if (s && s.type === 'box' && els[s.id]) els[s.id].style.zIndex = ++zTop;
+const selItems = () => [...selSet].map(byId).filter(Boolean);
+const selEdges = () => edges.filter(e => selSet.has(e.id));
+function syncSel() {
+  for (const id in els) els[id].classList.toggle('sel', selSet.has(id));
+  if (sel && sel.type === 'box' && els[sel.id]) els[sel.id].style.zIndex = ++zTop;
   scheduleDraw(); updBar();
 }
+function pruneSel() {
+  selSet = new Set([...selSet].filter(id => byId(id)));
+  sel = selSet.size === 1 ? itemOf([...selSet][0]) : null;
+  syncSel();
+}
+function select(s) { selSet = new Set(s ? [s.id] : []); sel = s; syncSel(); }
+function selectSet(ids) { selSet = new Set(ids); sel = ids.length === 1 ? itemOf(ids[0]) : null; syncSel(); }
+function selectEverything() { selectSet([...boxes.map(b => b.id), ...nodes.map(n => n.id), ...edges.map(e => e.id)]); }
+function toggleSel(id) { const s = new Set(selSet); if (s.has(id)) s.delete(id); else s.add(id); selectSet([...s]); }
+const autoBoxHex = () => getComputedStyle(root).getPropertyValue('--box-bg').trim() || '#ffffff';
 function updBar() {
   $('#undo').disabled = hp <= 0;
   $('#redo').disabled = hp >= hist.length - 1;
-  $('#del').disabled = !sel;
-  const isE = !!sel && sel.type === 'edge';
-  $('#swap').disabled = !isE;
-  const it = curItem();
-  ['#ew', '#es', '#er'].forEach(s => $(s).disabled = !isE);
-  if (isE && it) { $('#ew').value = it.w || 3; $('#es').value = it.style || 'solid'; $('#er').value = it.mode || 'avoid'; }
-  $('#target').textContent = !sel ? '' : {edge: 'Arrow', box: 'Box', node: 'Node'}[sel.type];
-  document.querySelectorAll('.sw').forEach(s => { s.classList.toggle('on', !!it && s.dataset.c === it.color); s.disabled = !it; s.style.opacity = it ? 1 : .35; });
-  $('#custom').disabled = !it; if (it) $('#custom').value = it.color;
+  $('#del').disabled = selSet.size === 0;
+  const es = selEdges(), colorable = selItems().filter(o => o.color !== undefined);
+  $('#swap').disabled = !(sel && sel.type === 'edge');
+  ['#ew', '#es', '#er'].forEach(q => $(q).disabled = !es.length);
+  if (es.length) { $('#ew').value = es[0].w || 3; $('#es').value = es[0].style || 'solid'; $('#er').value = es[0].mode || 'avoid'; }
+  $('#target').textContent = selSet.size > 1 ? `${selSet.size} selected` : !sel ? '' : {edge: 'Arrow', box: 'Box', node: 'Node'}[sel.type];
+  const one = selSet.size === 1 && colorable.length === 1 ? colorable[0] : null;
+  document.querySelectorAll('.sw').forEach(q => {
+    q.classList.toggle('on', !!one && (one.color === null ? q.dataset.c === 'auto' : q.dataset.c === one.color));
+    q.disabled = !colorable.length; q.style.opacity = colorable.length ? 1 : .35;
+  });
+  $('#custom').disabled = !colorable.length;
+  if (one) $('#custom').value = one.color || autoBoxHex();
   $('#empty').hidden = boxes.length > 0;
 }
 function applyColor(c, final = true) {
-  const it = curItem(); if (!it) return;
-  it.color = c;
-  if (sel.type === 'box') styleBox(it);
+  const items = selItems().filter(o => o.color !== undefined); if (!items.length) return;
+  items.forEach(o => { const b = isBox(o.id); o.color = c === 'auto' ? (b ? null : EDGE_DEFAULT) : c; if (b) styleBox(o); });
   scheduleDraw(); if (final) commit(); else updBar();
 }
 PALETTE.forEach(c => {
-  const b = document.createElement('button'); b.className = 'sw'; b.dataset.c = c; b.style.background = c; b.title = c;
+  const b = document.createElement('button'); b.className = 'sw'; b.dataset.c = c;
+  b.style.background = c === 'auto' ? 'linear-gradient(135deg,#ffffff 50%,#2b3140 50%)' : c;
+  b.title = c === 'auto' ? 'Auto (follows theme)' : c;
   b.addEventListener('click', () => applyColor(c)); $('#colors').appendChild(b);
 });
 $('#custom').addEventListener('input', e => applyColor(e.target.value, false));
 $('#custom').addEventListener('change', e => applyColor(e.target.value, true));
-const edgeSel = () => sel && sel.type === 'edge' ? edges.find(e => e.id === sel.id) : null;
-$('#ew').addEventListener('input', e => { const it = edgeSel(); if (it) { it.w = +e.target.value; scheduleDraw(); } });
+$('#ew').addEventListener('input', e => { selEdges().forEach(x => { x.w = +e.target.value; }); scheduleDraw(); });
 $('#ew').addEventListener('change', () => commit());
-$('#es').addEventListener('change', e => { const it = edgeSel(); if (it) { it.style = e.target.value; scheduleDraw(); commit(); } });
-$('#er').addEventListener('change', e => { const it = edgeSel(); if (it) { it.mode = e.target.value; scheduleDraw(); commit(); } });
+$('#es').addEventListener('change', e => { selEdges().forEach(x => { x.style = e.target.value; }); scheduleDraw(); commit(); });
+$('#er').addEventListener('change', e => { selEdges().forEach(x => { x.mode = e.target.value; }); scheduleDraw(); commit(); });
 $('#undo').onclick = undo; $('#redo').onclick = redo;
-$('#del').onclick = () => { if (sel) delObjs([sel.id]); };
+$('#del').onclick = () => { if (selSet.size) delObjs([...selSet]); };
 $('#swap').onclick = swapEdge;
 $('#reset').onclick = () => { view = {x: 0, y: 0, z: 1}; applyView(); };
 
@@ -772,12 +819,20 @@ function rebuild() {
 function load(d) {
   if (!d || !Array.isArray(d.boxes)) throw new Error('bad');
   const okc = c => /^#[0-9a-f]{6}$/i.test(c);
+  const legacy = d.ver !== 4;   // pre-v4 data stored the theme default as a fixed color
+  const isDef = c => /^#(2b3140|ffffff)$/i.test(c);
   boxes = d.boxes.map(b => ({
     id: String(b.id || uid()), x: snapG(+b.x || 0), y: snapG(+b.y || 0),
     w: Math.max(120, snapG(+b.w || 160)), h: Math.max(40, snapG(+b.h || 60)),
-    title: String(b.title || 'Untitled'), color: okc(b.color) ? b.color : '#2b3140',
+    title: String(b.title || 'Untitled'), color: okc(b.color) && !(legacy && isDef(b.color)) ? b.color : null,
     lines: Array.isArray(b.lines) ? b.lines.map(String) : [], collapsed: !!b.collapsed
   }));
+  const seenT = new Set();
+  boxes.forEach(b => {
+    let t = cleanT(b.title) || 'Untitled', i = 2;
+    while (seenT.has(normT(t))) t = `${cleanT(b.title) || 'Untitled'} ${i++}`;
+    b.title = t; seenT.add(normT(t));
+  });
   nodes = (Array.isArray(d.nodes) ? d.nodes : []).map(n => ({id: String(n.id || uid()), x: snapG(+n.x || 0), y: snapG(+n.y || 0)}));
   const ids = new Set([...boxes.map(b => b.id), ...nodes.map(n => n.id)]), boxIds = new Set(boxes.map(b => b.id));
   const anc = (a, fx, fy) => {
@@ -795,10 +850,10 @@ function load(d) {
     mode: e.mode === 'direct' ? 'direct' : 'avoid'
   }));
   if (d.view && isFinite(d.view.z) && d.view.z > 0) view = {x: +d.view.x || 0, y: +d.view.y || 0, z: +d.view.z};
-  sel = null; rebuild(); normalize(); applyView(); updBar();
+  selSet = new Set(); sel = null; rebuild(); normalize(); applyView(); updBar();
 }
 $('#save').onclick = () => {
-  const blob = new Blob([JSON.stringify({...JSON.parse(snap()), view}, null, 2)], {type: 'application/json'});
+  const blob = new Blob([JSON.stringify({...JSON.parse(snap()), view, ver: 4}, null, 2)], {type: 'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ideamap.json'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
@@ -811,11 +866,18 @@ $('#file').onchange = async ev => {
 
 /* ---------- mouse ---------- */
 const blurActive = () => { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); };
+const edgeSel = () => sel && sel.type === 'edge' ? edges.find(e => e.id === sel.id) : null;
 function markDrops(tg) {
   const id = tg ? tg.id : null;
   for (const k in els) els[k].classList.toggle('drop', !!tg && (tg.type === 'box' || tg.type === 'border') && k === id);
   for (const k in gEls) gEls[k].classList.toggle('drop', !!tg && tg.type === 'edge' && k === id);
   for (const k in nEls) nEls[k].classList.toggle('drop', !!tg && tg.type === 'node' && k === id);
+}
+/* drag every selected box and node together; a plain click inside a multi-selection narrows it to that one */
+function startMove(e, soloId) {
+  const its = [];
+  selSet.forEach(id => { const o = byId(id); if (o && (isBox(id) || isNode(id))) its.push({o, ox: o.x, oy: o.y, box: isBox(id)}); });
+  if (its.length) drag = {t: 'move', its, solo: soloId || null, sx: e.clientX, sy: e.clientY, moved: false};
 }
 
 stage.addEventListener('contextmenu', e => e.preventDefault());
@@ -845,13 +907,15 @@ stage.addEventListener('mousedown', e => {
   setHover(null);
   if (pk && pk.type === 'node') {
     e.preventDefault(); blurActive();
-    const n = nodes.find(x => x.id === pk.id);
-    select({type: 'node', id: n.id});
-    drag = {t: 'node', n, ox: n.x - p.x, oy: n.y - p.y, moved: false};
+    if (e.shiftKey) { toggleSel(pk.id); return; }
+    const multi = selSet.size > 1 && selSet.has(pk.id);
+    if (!multi) select({type: 'node', id: pk.id});
+    startMove(e, multi ? pk.id : null);
     return;
   }
   if (pk && pk.type === 'border') {
     e.preventDefault(); blurActive();
+    if (e.shiftKey) { toggleSel(pk.id); return; }
     const b = boxes.find(x => x.id === pk.id);
     select({type: 'box', id: b.id});
     drag = {t: 'link', src: {type: 'box', id: b.id, fa: snapBorder(R(b), p)}, sx: e.clientX, sy: e.clientY, moved: false};
@@ -859,15 +923,17 @@ stage.addEventListener('mousedown', e => {
     return;
   }
   if (pk && pk.type === 'box') {
-    const b = boxes.find(x => x.id === pk.id);
-    select({type: 'box', id: b.id});
+    if (e.shiftKey) { e.preventDefault(); blurActive(); toggleSel(pk.id); return; }
+    const multi = selSet.size > 1 && selSet.has(pk.id);
+    if (!multi) select({type: 'box', id: pk.id});
     if (e.target.isContentEditable || e.target.closest('.x,.addline')) return;
     e.preventDefault(); blurActive();
-    drag = {t: 'move', b, ox: b.x, oy: b.y, sx: e.clientX, sy: e.clientY, moved: false};
+    startMove(e, multi ? pk.id : null);
     return;
   }
   if (pk && pk.type === 'edge') {
     e.preventDefault(); blurActive();
+    if (e.shiftKey) { toggleSel(pk.id); return; }
     select({type: 'edge', id: pk.id});
     const pt = gridPtOnRoute(pk.id, p);
     if (pt) {
@@ -877,6 +943,7 @@ stage.addEventListener('mousedown', e => {
     return;
   }
   e.preventDefault(); blurActive();
+  const gs = getSelection(); if (gs) gs.removeAllRanges();
   select(null);
   drag = {t: 'new', p, sx: e.clientX, sy: e.clientY};
 });
@@ -900,19 +967,18 @@ window.addEventListener('mousemove', e => {
   } else if (drag.t === 'move') {
     if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 3) drag.moved = true;
     if (drag.moved) {
-      const b = drag.b;
-      b.x = snapG(drag.ox + (e.clientX - drag.sx) / view.z); b.y = snapG(drag.oy + (e.clientY - drag.sy) / view.z);
-      els[b.id].style.left = b.x + 'px'; els[b.id].style.top = b.y + 'px';
+      const dx = snapG((e.clientX - drag.sx) / view.z), dy = snapG((e.clientY - drag.sy) / view.z);
+      drag.its.forEach(it => {
+        it.o.x = it.ox + dx; it.o.y = it.oy + dy;
+        if (it.box) { els[it.o.id].style.left = it.o.x + 'px'; els[it.o.id].style.top = it.o.y + 'px'; }
+      });
       scheduleDraw();
     }
-  } else if (drag.t === 'node') {
-    const nx = snapG(p.x + drag.ox), ny = snapG(p.y + drag.oy);
-    if (nx !== drag.n.x || ny !== drag.n.y) { drag.n.x = nx; drag.n.y = ny; drag.moved = true; scheduleDraw(); }
   } else if (drag.t === 'new') {
-    const c = {x: snapG(p.x), y: snapG(p.y)}, s = {x: snapG(drag.p.x), y: snapG(drag.p.y)};
+    const c = {x: snapG(p.x), y: snapG(p.y)}, s0 = {x: snapG(drag.p.x), y: snapG(drag.p.y)};
     Object.assign(rb.style, {
-      display: 'block', left: Math.min(s.x, c.x) + 'px', top: Math.min(s.y, c.y) + 'px',
-      width: Math.abs(c.x - s.x) + 'px', height: Math.abs(c.y - s.y) + 'px'
+      display: 'block', left: Math.min(s0.x, c.x) + 'px', top: Math.min(s0.y, c.y) + 'px',
+      width: Math.abs(c.x - s0.x) + 'px', height: Math.abs(c.y - s0.y) + 'px'
     });
   } else if (drag.t === 'resize') {
     const c = drag.c, MINW = 120, b = drag.b;
@@ -940,7 +1006,7 @@ window.addEventListener('mousemove', e => {
     const sp = srcPoint(drag.src); if (!sp) return;
     tmp.setAttribute('d', `M${sp.x} ${sp.y}L${p.x} ${p.y}`);
     const tg = pickAt(p, drag.src.id);
-    drag.tg = tg && tg.type !== 'edge' && tg.type !== 'node' && tg.type !== 'box' && tg.type !== 'border' ? null : tg;
+    drag.tg = tg && (tg.type === 'edge' || tg.type === 'node' || tg.type === 'box' || tg.type === 'border') ? tg : null;
     markDrops(drag.tg); setHover(drag.tg);
   }
 });
@@ -950,7 +1016,8 @@ window.addEventListener('mouseup', e => {
   const d = drag; drag = null;
   stage.style.cursor = space ? 'grab' : ''; document.body.style.cursor = '';
   document.body.classList.remove('linking');
-  if ((d.t === 'move' || d.t === 'handle' || d.t === 'resize' || d.t === 'node') && d.moved) commit();
+  if (d.t === 'move') { if (d.moved) commit(); else if (d.solo) select(itemOf(d.solo)); }
+  else if ((d.t === 'handle' || d.t === 'resize') && d.moved) commit();
   else if (d.t === 'new') {
     rb.style.display = 'none';
     if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 10) return;
@@ -969,7 +1036,6 @@ window.addEventListener('mouseup', e => {
     markDrops(null); setHover(null);
     if (!d.moved || !d.tg) return;
     const p = toWorld(e.clientX, e.clientY), tg = d.tg;
-    // resolve target first (uses current routes), then source
     let tgtPt = null;
     if (tg.type === 'edge') { tgtPt = gridPtOnRoute(tg.id, p); if (!tgtPt) return; }
     let fromId, fa = null;
@@ -1008,9 +1074,17 @@ window.addEventListener('keydown', e => {
   if (e.code === 'Space' && !isEditing()) { space = true; stage.style.cursor = 'grab'; e.preventDefault(); return; }
   if (isEditing()) { if (e.key === 'Escape') document.activeElement.blur(); return; }
   const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
-  if (mod && k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  if (mod && k === 'a') {
+    e.preventDefault(); blurActive();
+    if (sel && sel.type === 'box') {          // one box selected -> its text
+      const r = document.createRange(); r.selectNodeContents(els[sel.id]);
+      const g = getSelection(); g.removeAllRanges(); g.addRange(r);
+    } else if (sel && sel.type === 'edge') editLabel(edgeSel());   // one arrow selected -> its label text
+    else if (!sel) selectEverything();        // otherwise -> every element
+  }
+  else if (mod && k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
   else if (mod && k === 'y') { e.preventDefault(); redo(); }
-  else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); if (sel) delObjs([sel.id]); }
+  else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); if (selSet.size) delObjs([...selSet]); }
   else if (e.key === 'Enter' && sel && sel.type === 'edge') { const ed = edgeSel(); if (ed) editLabel(ed); }
   else if (e.key === 'Escape') select(null);
 });

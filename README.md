@@ -7,7 +7,9 @@ A lightweight flowchart / blueprint tool for mapping out ideas. It runs entirely
 - **Boxes:** drag on empty canvas to create one, then type a title. Add lines of text, and the box grows and shrinks to fit them. Resize a box from its corners. Collapse it with the corner button, or hold that button for 2s to collapse or expand every box.
 - **Arrows:** drag from a box border to another box. Arrows route along the grid with rounded corners and take the shortest path around other boxes. A selected arrow can be set to ignore boxes instead.
 - **Nodes:** drag off an arrow, or drop onto one, to create a junction node there. Nodes can be dragged. A node left with one arrow in and one arrow out merges its two arrows back into one.
-- **Styling:** boxes and arrows can be colored. Arrows also have a thickness, a line style (solid, dashed or dotted) and a label, and can be reversed.
+- **Unique titles:** no two boxes can share a title (case-insensitive). A clash turns the title red and blocks Enter; leaving the field renames a new box ("A 2") or reverts an existing one. Saved files with duplicates are fixed on load.
+- **Selection:** click to select, Shift-click to add or remove, **Ctrl+A** to select every box, node and arrow (with one box selected, it selects that box's text instead). Selected items move, recolor and delete together.
+- **Styling:** boxes and arrows can be colored. Boxes default to *Auto* (the half-white swatch), which follows the light/dark theme. Arrows also have a thickness, a line style (solid, dashed or dotted) and a label, and can be reversed.
 - **Canvas:** pan and zoom, undo and redo, and light or dark theme (follows the system by default).
 - **Saving:** the map autosaves in the browser. **Save** and **Load** export and import `.json` files.
 
