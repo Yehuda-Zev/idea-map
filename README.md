@@ -1,73 +1,79 @@
 # Idea Map
 
-A lightweight flowchart / blueprint tool for mapping out ideas. It runs entirely in the browser and has no backend, no build step and no dependencies. It is also installable as a Chrome app (PWA) that works offline.
+A single-file flowchart / blueprint editor. Boxes, grid-routed arrows, nodes and groups on an infinite pan-and-zoom canvas. Vanilla JS, no dependencies, installable as a PWA, works with mouse, touch and pen.
 
-## What it does
-
-- **Boxes:** drag on empty canvas to create one, then type a title. Add lines of text, and the box grows and shrinks to fit them. Resize a box from its corners. Collapse it with the corner button, or hold that button for 2s to collapse or expand every box.
-- **Arrows:** drag from a box border to another box. The start is where you grab; the end is chosen by pathfinding (fewest turns to anywhere on the target's border, so where you release doesn't matter). Arrows route along the grid with rounded corners around other boxes, with the jog halfway along the run. A selected arrow's end dots can be slid to custom points; moving the end box clears its custom end point (moving the start box keeps the start point). Swap reverses direction. A selected arrow can be set to ignore boxes instead.
-- **Nodes:** drag off an arrow, or drop onto one, to create a junction node there. Nodes can be dragged. A node left with one arrow in and one arrow out merges its two arrows back into one.
-- **Unique titles:** no two boxes can share a title (case-insensitive). A clash turns the title red and blocks Enter; leaving the field renames a new box ("A 2") or reverts an existing one. Saved files with duplicates are fixed on load.
-- **Selection:** click to select, Shift-click to add or remove, **Ctrl+A** to select every box, node and arrow (with one box selected, it selects that box's text instead). Selected items move, recolor and delete together.
-- **Styling:** boxes and arrows can be colored. Boxes default to *Auto* (the half-white swatch), which follows the light/dark theme. Arrows also have a thickness, a line style (solid, dashed or dotted) and a label, and can be reversed.
-- **Touch:** works on tablets and phones. One finger drags things like the mouse (empty space pans), two fingers pan and pinch-zoom, double-tap empty space makes a box, double-tap a title or arrow to rename or label it. Use **Select > Custom** for tap-to-select.
-- **Toolbar menus:** *File* (undo, redo, save, load, install), *View* (reset view, theme), *Select* (all, inverse, by color, custom pick mode), *Box* (expand or collapse all, delete selected), *Arrow* (thickness, line style, routing, reverse, delete selected) and *Color* (apply a color, add your own, or remove custom ones). The color list is saved inside each map file. In pick mode every box shows a circle that fills when selected; **Done** keeps the selection, **Cancel** restores the previous one.
-- **Canvas:** pan and zoom, undo and redo, and light or dark theme (follows the system by default).
-- **Saving:** the map autosaves in the browser. **Save** opens a Save-as dialog (name and folder of your choice; plain download in browsers without it) and **Load** imports a `.json` file.
+**Version 1.3.0** (major.minor.patch)
 
 ## Files
 
-```
-ideamap-app/
-├── index.html            the entire app (HTML + CSS + JS)
-├── manifest.webmanifest  app name, icons, window mode (makes it installable)
-├── sw.js                 service worker (offline cache)
-└── icons/                app icons (192, 512, maskable 512)
-```
+| File | Purpose |
+|---|---|
+| `index.html` | The whole app |
+| `sw.js` | Service worker (offline use) |
+| `manifest.webmanifest`, `icons/` | PWA install metadata |
 
-## Hosting it on the Express server
+## Basics
 
-Chrome only installs apps served over **HTTPS** (or `localhost`), so the folder needs to be served by a web server. Opening `index.html` directly won't offer an install.
+- **New box:** drag on empty space (or double-tap on touch).
+- **Arrow:** drag from a box border to another box, node or arrow.
+- **Branch:** drag from an arrow to make a node and start a new arrow.
+- **Join:** drop an arrow end on another arrow to make a node there.
+- **Rename:** double-click (double-tap) a box title, arrow or group label.
+- **Delete:** `Del`. **Undo / redo:** `Ctrl+Z` / `Ctrl+Y`.
+- **Pan:** drag empty space on touch, right/middle-drag or `Space`+drag on mouse. **Zoom:** wheel or pinch.
 
-1. **Put the folder in the server project**, for example at `public/ideamap-app/`, and commit it to the repo so the normal deploy picks it up.
+## Boxes
 
-2. **Serve it as static files** in the Express app, before any catch-all routes or auth middleware:
+- Title plus any number of text lines; boxes can be collapsed to just the title.
+- Resize from the corner handles of a selected box.
+- Own color or Auto (follows the theme).
+- Hold the collapse button 2 s to collapse/expand all.
 
-   ```js
-   const path = require('path');
-   app.use('/ideamap', express.static(path.join(__dirname, 'public', 'ideamap-app')));
-   ```
+## Arrows
 
-3. **Restart the server** (e.g. `pm2 restart <app-name>`).
+- Routed along a grid with the fewest turns, avoiding boxes (or "Ignore boxes").
+- The end anchor is chosen automatically; drag an end dot to set one by hand. Moving the box resets a custom end.
+- Per-arrow thickness, line style (solid / dashed / dotted), color, label, and Reverse.
+- Boxes that are very close get a straight line; touching boxes show a small direction triangle on the shared border (tap it to select the arrow).
 
-4. **Open `https://lionwolf.org/ideamap/`**. The Cloudflare Tunnel already provides HTTPS, so nothing else is needed.
+## Nodes
 
-5. **Install it:** click **⬇ Install** in the app's toolbar, or the install icon at the right end of Chrome's address bar.
+Small junction dots created by branching or joining arrows. They can be dragged, grouped and individually colored (Color menu). A node with no color of its own follows its arrow.
 
-Notes:
+## Groups
 
-- **Keep the trailing slash** (`/ideamap/`). The app uses relative paths, so it works under any sub-path. Express redirects `/ideamap` to `/ideamap/` automatically.
-- **Keep it public, or put it behind your login.** If it sits behind session auth, the service worker still caches it for offline use after the first visit.
-- **Don't long-cache `sw.js`.** If you add caching headers, keep them off `sw.js` so browsers pick up new versions. Express's default (`maxAge: 0`) is fine.
+- Dotted frames around boxes, nodes and other groups; groups nest, an item has one parent group.
+- Make one from the selection (**Group > Group selected**) or by dragging a frame (**Group > Draw frame…**).
+- Drag items in or out; the frame grows and shrinks live, and dropped items are placed in the nearest free spot.
+- Arrows with both ends in a group belong to it. Select a frame to move it or resize it from its corners (clamped to its contents).
+- **Select contents** and **Ungroup** are in the Group menu.
 
-## Testing locally (no server)
+## Selecting
 
-From inside the `ideamap-app` folder:
+Select menu:
 
-```
-npx serve
-```
+- **All**, **All boxes**, **All arrows** (includes nodes), **Inverse selection**
+- **By color**
+- **Custom:** tap boxes, arrows and nodes to toggle them, then Done/Cancel
+- **Lasso:** drag a freehand shape; everything whose center is inside is selected (replaces the current selection). A box's center is its middle, an arrow's is the midpoint of its path.
 
-Open the `http://localhost:...` link it prints. Chrome treats `localhost` as secure, so installing works there too.
+Shift-click multi-selects; `Ctrl+A` selects everything.
 
-## Updating the app
+## Color
 
-1. Replace `index.html` (and any other changed files) on the server.
-2. The service worker fetches pages network-first, so the next online launch loads the new version automatically.
-3. When you change the list of cached files in `sw.js`, also bump `CACHE` (e.g. `'ideamap-v2'`) so the old cache is cleared.
+Swatch grid applies to the selected boxes, arrows and nodes. Add your own colors with the picker (**Add to colors**) and remove them again (**Remove custom colors**). The palette is saved inside each map file.
 
-## Where data lives
+## Files and menus
 
-- **Maps are stored in the browser's `localStorage`,** per origin. The installed app shares storage with `https://lionwolf.org` in Chrome, but not with other browsers, devices or a `localhost` copy.
-- **To move a map,** use **Save** (downloads `ideamap.json`), then **Load** in the other copy.
-- **Server-side storage isn't built in.** Syncing maps across devices would need an API route (for example `POST /api/maps`) plus a MySQL table.
+- **File:** New (asks to save unsaved changes), Save… (file dialog), Load…, Undo, Redo, Install app.
+- **View:** Reset view, Theme (light by default, dark, or follow system).
+- **Box / Arrow / Group / Color:** actions on the current selection.
+- The map autosaves in the browser. Saved files are plain JSON.
+
+## Touch
+
+One-finger drag on empty space pans, two fingers pinch and pan, double-tap empty space makes a box, double-tap a title/arrow/frame label renames it. Hit areas are larger on touch.
+
+## Running
+
+Open `index.html` in a browser, or serve the folder from any static web server for install/offline support.

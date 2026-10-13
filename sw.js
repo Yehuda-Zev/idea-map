@@ -1,6 +1,6 @@
 // Offline support: the app shell is cached on install.
 // Pages load network-first (so updates show up), falling back to the cache when offline.
-const CACHE = 'ideamap-v2';
+const CACHE = 'ideamap-v3';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'];
 
 self.addEventListener('install', e => {

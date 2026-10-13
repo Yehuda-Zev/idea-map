@@ -59,14 +59,20 @@ html,body{touch-action:none;overscroll-behavior:none;-webkit-tap-highlight-color
 .box.sel .cbtn{display:flex}
 .cbtn.hold{animation:hold 2s linear forwards}
 @keyframes hold{from{box-shadow:0 0 0 0 var(--acc)}to{box-shadow:0 0 0 7px var(--acc)}}
+#tris polygon{stroke:var(--bg);stroke-width:1.5px;stroke-linejoin:round}
+#tris polygon.sel{stroke:var(--acc);stroke-width:2.5px}
 #handles{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none;z-index:1000000}
 .hnd{display:none;r:calc(7px*var(--k,1));fill:#fff;stroke:var(--acc);stroke-width:2.5;cursor:grab;pointer-events:all}
 .hnd.on{display:block}
 .rsz{display:none;fill:#fff;stroke:var(--acc);stroke-width:2;pointer-events:all}
 .rsz.on{display:block}
+.grsz{display:none;fill:#fff;stroke:var(--acc);stroke-width:2;pointer-events:all}
+.grsz.on{display:block}
+.grsz[data-c=nw],.grsz[data-c=se]{cursor:nwse-resize}
+.grsz[data-c=ne],.grsz[data-c=sw]{cursor:nesw-resize}
 .rsz[data-c=nw],.rsz[data-c=se]{cursor:nwse-resize}
 .rsz[data-c=ne],.rsz[data-c=sw]{cursor:nesw-resize}
-body.linking .hnd,body.linking .rsz{pointer-events:none}
+body.linking .hnd,body.linking .rsz,body.linking .grsz{pointer-events:none}
 .tmp{fill:none;stroke:var(--ok);stroke-width:2.5;stroke-dasharray:6 5}
 .edge .line{fill:none;stroke-linecap:round;stroke-linejoin:round}
 .edge .halo{fill:none;stroke:var(--acc);opacity:0;stroke-linecap:round;stroke-linejoin:round}
@@ -78,6 +84,8 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
 .node.drop{stroke:var(--ok);stroke-width:3}
 .edge-input{position:absolute;transform:translate(-50%,-50%);z-index:60;width:150px;padding:3px 6px;font:13px system-ui;
   background:var(--panel);color:var(--txt);border:1px solid var(--acc);border-radius:5px;outline:none}
+#lassosvg{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;z-index:45;pointer-events:none}
+#lasso{fill:color-mix(in srgb,var(--acc) 12%,transparent);stroke:var(--acc);stroke-width:2px;stroke-dasharray:6 4;stroke-linejoin:round;display:none}
 .rb{position:absolute;display:none;z-index:40;pointer-events:none;border:1.5px dashed var(--acc);background:color-mix(in srgb,var(--acc) 9%,transparent);border-radius:10px}
 #bar{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:6px;align-items:center;flex-wrap:nowrap;width:max-content;
   padding:6px 10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px var(--shadow)}
@@ -102,7 +110,7 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
   background:var(--panel);color:var(--txt);border:1px solid var(--line);box-shadow:0 6px 24px var(--shadow);font-size:13px}
 #toast[hidden]{display:none}
 #hint{position:fixed;left:12px;bottom:10px;z-index:90;font-size:12px;opacity:.6;max-width:70vw;pointer-events:none}
-#empty{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.4;font-size:18px}
+#empty{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px;box-sizing:border-box;pointer-events:none;opacity:.4;font-size:18px}
 #empty[hidden]{display:none}
 #bar{flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 16px)}
 .mb.open{background:var(--acc)!important;color:#fff!important}
@@ -127,25 +135,44 @@ body.linking .hnd,body.linking .rsz{pointer-events:none}
 body.selmode .sc{display:block}
 body.selmode .box.sel .sc{background:var(--acc);border-color:var(--acc);opacity:1;box-shadow:inset 0 0 0 2px var(--box-bg,#fff)}
 body.selmode .title{margin-left:22px}
-body.selmode .cbtn,body.selmode .rsz,body.selmode .hnd,body.selmode .x,body.selmode .addline{display:none!important}
+body.selmode .rsz,body.selmode .hnd,body.selmode .grsz{display:none!important}
+body.selmode .cbtn,body.selmode .x,body.selmode .addline{visibility:hidden!important}   /* keep layout stable so arrows don't shift */
 body.selmode .box{cursor:pointer}
 .touch .sc{width:22px;height:22px;left:7px;top:7px}
 .touch.selmode .title{margin-left:30px}
-#selpop{position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:110;display:none;flex-direction:column;gap:8px;padding:12px;
+#selpop,#framepop,#lassopop{position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:110;display:none;flex-direction:column;gap:8px;padding:12px;
   background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px var(--shadow);max-width:150px}
-body.selmode #selpop{display:flex}
-@media (max-width:700px){#selpop{right:auto;left:50%;top:auto;bottom:14px;transform:translateX(-50%);flex-direction:row;align-items:center;max-width:none;white-space:nowrap}}
-#selpop b{font-size:13px}
-#selpop button{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;font:inherit}
+body.selmode #selpop,body.framemode #framepop,body.lassomode #lassopop{display:flex}
+body.lassomode #stage{cursor:crosshair}
+@media (max-width:700px){#selpop,#framepop,#lassopop{right:auto;left:50%;top:auto;bottom:14px;transform:translateX(-50%);flex-direction:row;align-items:center;max-width:none;white-space:nowrap}}
+#selpop b,#framepop b,#lassopop b{font-size:13px}
+#selpop button,#framepop button,#lassopop button{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;font:inherit}
 #selpop #seldone{background:var(--acc);color:#fff;border-color:var(--acc)}
+body.framemode #stage{cursor:crosshair}
+.grp{position:absolute;z-index:0;box-sizing:border-box;pointer-events:none;border:2px dashed color-mix(in srgb,var(--txt) 45%,transparent);border-radius:16px;
+  background:color-mix(in srgb,var(--acc) 5%,transparent)}
+.box.settle{transition:left .2s ease,top .2s ease}
+.grp.drop{border-style:solid;border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,transparent)}
+.grp.sel{border-style:solid;border-color:var(--acc);background:color-mix(in srgb,var(--acc) 9%,transparent)}
+.glabel{position:absolute;left:12px;top:6px;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px system-ui;opacity:.75;letter-spacing:.02em}
+.touch .glabel{font-size:14px;top:8px}
+.gedit{transform:translate(0,-50%)}
+#dlg{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4)}
+#dlg[hidden]{display:none}
+.dbox{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px var(--shadow);padding:18px 20px;width:min(360px,calc(100vw - 32px))}
+.dbox b{font-size:16px}.dbox p{margin:8px 0 16px;opacity:.8}
+.dbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.dbtns button{background:var(--btn);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
+.dbtns button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
 </style>
 </head>
 <body>
 <div id="stage">
   <div id="world">
     <svg id="edges"><g id="eg"></g><g id="ng"></g></svg>
-    <svg id="handles"><circle class="hnd" id="hS" data-w="s"></circle><circle class="hnd" id="hE" data-w="e"></circle><rect class="rsz" data-c="nw"></rect><rect class="rsz" data-c="ne"></rect><rect class="rsz" data-c="sw"></rect><rect class="rsz" data-c="se"></rect></svg>
+    <svg id="handles"><g id="tris"></g><circle class="hnd" id="hS" data-w="s"></circle><circle class="hnd" id="hE" data-w="e"></circle><rect class="rsz" data-c="nw"></rect><rect class="rsz" data-c="ne"></rect><rect class="rsz" data-c="sw"></rect><rect class="rsz" data-c="se"></rect><rect class="grsz" data-c="nw"></rect><rect class="grsz" data-c="ne"></rect><rect class="grsz" data-c="sw"></rect><rect class="grsz" data-c="se"></rect></svg>
     <div class="rb" id="rb"></div>
+    <svg id="lassosvg"><polygon id="lasso"></polygon></svg>
   </div>
 </div>
 <div id="empty"><span class="mouse">Drag on empty space to create your first box</span><span class="tch">Double-tap empty space to create your first box</span></div>
@@ -155,6 +182,7 @@ body.selmode #selpop{display:flex}
   <button class="mb" data-m="view">View &#9662;</button>
   <button class="mb" data-m="select">Select &#9662;</button>
   <button class="mb" data-m="box">Box &#9662;</button>
+  <button class="mb" data-m="group">Group &#9662;</button>
   <button class="mb" data-m="arrow">Arrow &#9662;</button>
   <button class="mb" data-m="color">Color &#9662;</button>
   <span id="target"></span>
@@ -163,26 +191,38 @@ body.selmode #selpop{display:flex}
   <button id="undo" title="Ctrl+Z">Undo</button>
   <button id="redo" title="Ctrl+Y">Redo</button>
   <hr>
+  <button id="newfile">New</button>
   <button id="save">Save&hellip;</button>
   <button id="load">Load&hellip;</button>
   <button id="install" title="Install as an app" hidden>&#11015; Install app</button>
 </div>
 <div class="pop" id="pop-view">
   <button id="reset">Reset view</button>
+  <div id="ver" style="font-size:11px;opacity:.55;padding:2px 4px">v1.3.0 &middot; touch: <span id="tinfo">?</span></div>
   <button id="theme" data-keep title="Theme: follows system by default">Theme</button>
 </div>
 <div class="pop" id="pop-select">
   <button id="selall">All</button>
+  <button id="selboxes">All boxes</button>
+  <button id="selarrows">All arrows</button>
   <button id="selinv">Inverse selection</button>
   <button id="selcolbtn" data-keep>By color &#9656;</button>
   <div class="swrow" id="selcolors" hidden></div>
   <button id="selcustom">Custom (pick boxes)&hellip;</button>
+  <button id="sellasso">Lasso (draw around)&hellip;</button>
 </div>
 <div class="pop" id="pop-box">
   <button id="expall">Expand all</button>
   <button id="colall">Collapse all</button>
   <hr>
   <button id="delbox">Delete selected boxes</button>
+</div>
+<div class="pop" id="pop-group">
+  <button id="grpmake">Group selected</button>
+  <button id="grpframe">Draw frame&hellip;</button>
+  <hr>
+  <button id="grpsel">Select contents</button>
+  <button id="grpundo">Ungroup</button>
 </div>
 <div class="pop" id="pop-arrow">
   <div class="row2"><label>Thickness</label><input type="range" id="ew" min="1" max="12" step="1" value="3" title="Arrow thickness"></div>
@@ -198,11 +238,24 @@ body.selmode #selpop{display:flex}
   <div class="row2"><input type="color" id="custom" title="Pick a color"><button id="addcolor" data-keep>Add to colors</button></div>
   <button id="editcolors" data-keep hidden>Remove custom colors</button>
 </div>
-<div id="selpop"><b id="selcount">Selecting 0 boxes</b><button id="seldone">Done</button><button id="selcancel">Cancel</button></div>
+<div id="lassopop"><b>Draw around items &middot; centers inside get selected</b><button id="lassocancel">Cancel</button></div>
+<div id="framepop"><b>Drag a frame around items</b><button id="framecancel">Cancel</button></div>
+<div id="dlg" hidden><div class="dbox" role="dialog" aria-modal="true">
+  <b id="dlgt">Save changes first?</b>
+  <p id="dlgp">This map has changes that aren't saved to a file.</p>
+  <div class="dbtns"><button id="dsave" class="pri">Save</button><button id="ddisc">Don't save</button><button id="dcancel">Cancel</button></div>
+</div></div>
+<div id="selpop"><b id="selcount">Selecting nothing</b><button id="seldone">Done</button><button id="selcancel">Cancel</button></div>
 <input type="file" id="file" accept=".json,application/json" hidden>
-<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; Touch: drag = pan, two fingers = zoom, double-tap = new box / rename &middot; build 14</div>
+<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; Touch: drag = pan, two fingers = zoom, double-tap = new box / rename &middot; v1.3.0</div>
 
 <script>
+/* on-screen error report (helps debug devices without a console) */
+window.addEventListener('error', e => {
+  let b = document.getElementById('errbar');
+  if (!b) { b = document.createElement('div'); b.id = 'errbar'; b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:999;background:#b3261e;color:#fff;font:12px/1.3 monospace;padding:6px 8px;white-space:pre-wrap;max-height:40vh;overflow:auto'; document.body.appendChild(b); }
+  b.textContent += (e.message || 'error') + ' @' + (e.lineno || '?') + ':' + (e.colno || '?') + '\n';
+});
 (() => {
 const $ = s => document.querySelector(s);
 const stage = $('#stage'), world = $('#world'), eg = $('#eg'), ng = $('#ng'), rb = $('#rb'), root = document.documentElement;
@@ -215,11 +268,11 @@ const G = 20;                 // grid size (world px)
 const HOLD_MS = 2000;
 const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];   // 0 right, 1 down, 2 left, 3 up
 
-let boxes = [], nodes = [], edges = [], view = {x:0, y:0, z:1};
+let boxes = [], nodes = [], edges = [], groups = [], view = {x:0, y:0, z:1};
 let sel = null, selSet = new Set(), drag = null, space = false, zTop = 1, tmp = null, hover = null;
-const els = {}, gEls = {}, nEls = {};
+const els = {}, gEls = {}, nEls = {}, gels = {};
 let routes = {}, ends = {};
-let lastTouch = 0, tolK = 1, selectMode = false, prevSel = [];
+let lastTouch = 0, tolK = 1, selectMode = false, frameMode = false, lassoMode = false, prevSel = [];
 const fromTouch = () => Date.now() - lastTouch < 800;   // ignore the mouse events browsers synthesise after a touch
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-3);
 const S = (n, a = {}) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
@@ -231,10 +284,11 @@ const isEditing = () => {
   const a = document.activeElement;
   return !!a && (a.isContentEditable || a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'color' && a.type !== 'range'));
 };
-const byId = id => boxes.find(b => b.id === id) || nodes.find(n => n.id === id) || edges.find(e => e.id === id);
+const byId = id => boxes.find(b => b.id === id) || nodes.find(n => n.id === id) || edges.find(e => e.id === id) || groups.find(g => g.id === id);
 const isBox = id => boxes.some(b => b.id === id);
 const isNode = id => nodes.some(n => n.id === id);
-const typeOf = id => isBox(id) ? 'box' : isNode(id) ? 'node' : 'edge';
+const isGroup = id => groups.some(g => g.id === id);
+const typeOf = id => isBox(id) ? 'box' : isNode(id) ? 'node' : isGroup(id) ? 'group' : 'edge';
 const itemOf = id => ({type: typeOf(id), id});
 const cleanT = s => s.trim().replace(/\s+/g, ' ');
 const normT = s => cleanT(s).toLowerCase();
@@ -261,8 +315,8 @@ function fixTitles() {
 function hideToast() { clearTimeout(toastTm); $('#toast').hidden = true; }
 
 /* ---------- theme ---------- */
-let themePref = 'auto';
-try { themePref = localStorage.getItem(TKEY) || 'auto'; } catch (_) {}
+let themePref = 'light';
+try { themePref = localStorage.getItem(TKEY) || 'light'; } catch (_) {}
 if (!['auto', 'light', 'dark'].includes(themePref)) themePref = 'auto';
 function applyTheme() {
   if (themePref === 'auto') root.removeAttribute('data-theme'); else root.dataset.theme = themePref;
@@ -321,6 +375,22 @@ function normalize() {
       if (loop) break;
     }
   }
+  {
+    const idset = new Set([...boxes.map(b => b.id), ...nodes.map(n => n.id), ...groups.map(g => g.id)]), gn = groups.length;
+    let mc = 0; groups.forEach(g => { mc += g.members.length; });
+    const parent = new Map();   // one parent per item; no self-membership
+    groups.forEach(g => { g.members = g.members.filter(m => { if (!idset.has(m) || m === g.id || parent.has(m)) return false; parent.set(m, g.id); return true; }); });
+    groups.forEach(g => {   // no cycles: a group can't end up inside itself
+      const seen = new Set([g.id]); let cur = parent.get(g.id);
+      while (cur) {
+        if (cur === g.id) { const P = groups.find(q => q.id === parent.get(g.id)); if (P) P.members = P.members.filter(m => m !== g.id); parent.delete(g.id); break; }
+        if (seen.has(cur)) break; seen.add(cur); cur = parent.get(cur);
+      }
+    });
+    groups = groups.filter(g => !(g.fit && !g.members.length));
+    let mc2 = 0; groups.forEach(g => { mc2 += g.members.length; });
+    if (groups.length !== gn || mc2 !== mc) changed = true;
+  }
   if (changed) {
     pruneSel();
     syncNodeEls(); scheduleDraw();
@@ -332,7 +402,7 @@ function normalize() {
 let hist = [], hp = -1, tm = 0, vtm = 0;
 const snap = () => JSON.stringify({
   boxes: boxes.map(b => ({...b, lines: b.lines.filter(s => s.trim())})),
-  nodes, edges
+  nodes, edges, groups
 });
 function persist() {
   try { localStorage.setItem(KEY, JSON.stringify({...JSON.parse(snap()), view, colors: palette, ver: 5})); } catch (_) {}
@@ -340,6 +410,7 @@ function persist() {
 function commit() {
   clearTimeout(tm);
   normalize();
+  drawGroups();   // settle frame sizes so the saved state matches what's on screen
   const s = snap();
   if (hp >= 0 && hist[hp] === s) { updBar(); return; }
   hist = hist.slice(0, hp + 1); hist.push(s); hp = hist.length - 1;
@@ -349,7 +420,7 @@ function commit() {
 const schedule = () => { clearTimeout(tm); tm = setTimeout(commit, 500); };
 function restore(s) {
   const d = JSON.parse(s);
-  boxes = d.boxes; nodes = d.nodes || []; edges = d.edges; selSet = new Set(); sel = null; rebuild(); updBar();
+  boxes = d.boxes; nodes = d.nodes || []; edges = d.edges; groups = d.groups || []; selSet = new Set(); sel = null; rebuild(); updBar();
 }
 function undo() { if (hp > 0) { hp--; restore(hist[hp]); persist(); } }
 function redo() { if (hp < hist.length - 1) { hp++; restore(hist[hp]); persist(); } }
@@ -488,6 +559,13 @@ function delObjs(ids, silent) {
   boxes = boxes.filter(b => !rm.has(b.id));
   nodes = nodes.filter(n => !rm.has(n.id));
   edges = edges.filter(e => !rm.has(e.id) && !rm.has(e.from) && !rm.has(e.to));
+  groups.filter(g => rm.has(g.id)).forEach(g => {   // removing a frame hands its contents to the frame around it
+    const P = groups.find(q => !rm.has(q.id) && q.members.includes(g.id));
+    if (P) g.members.forEach(m => { if (!rm.has(m) && !P.members.includes(m)) P.members.push(m); });
+  });
+  groups = groups.filter(g => !rm.has(g.id));
+  groups.forEach(g => { const n = g.members.length; g.members = g.members.filter(m => !rm.has(m)); if (g.members.length !== n) g.refit = true; });
+  groups = groups.filter(g => !(g.fit && !g.members.length));
   pruneSel();
   syncNodeEls(); scheduleDraw();
   if (!silent) commit(); else normalize();
@@ -528,7 +606,13 @@ function facing(r, p) {
   if (Math.abs(dx) >= Math.abs(dy)) return {x: dx > 0 ? 1 : 0, y: clamp01((p.y - r.y) / r.h)};
   return {x: clamp01((p.x - r.x) / r.w), y: dy > 0 ? 1 : 0};
 }
-function stubPt(p, dir) {
+function stubPt(p, dir, len) {
+  if (len !== undefined && len !== G) {   // short stub (boxes very close): not snapped to the grid
+    if (dir === 0) return {x: p.x + len, y: snapG(p.y)};
+    if (dir === 2) return {x: p.x - len, y: snapG(p.y)};
+    if (dir === 1) return {x: snapG(p.x), y: p.y + len};
+    return {x: snapG(p.x), y: p.y - len};
+  }
   if (dir === 0) return {x: Math.ceil((p.x + G) / G) * G, y: snapG(p.y)};
   if (dir === 2) return {x: Math.floor((p.x - G) / G) * G, y: snapG(p.y)};
   if (dir === 1) return {x: snapG(p.x), y: Math.ceil((p.y + G) / G) * G};
@@ -653,8 +737,7 @@ function reverses(p) {   // any 180-degree doubling back?
   }
   return false;
 }
-function hitsAny(pts, obst) {
-  const P = 8;
+function hitsAny(pts, obst, P = 8) {
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i], b = pts[i + 1];
     const x1 = Math.min(a.x, b.x), x2 = Math.max(a.x, b.x), y1 = Math.min(a.y, b.y), y2 = Math.max(a.y, b.y);
@@ -671,8 +754,21 @@ function zSweep(S, E, horiz) {
   return vs.slice(0, 80).map(v => horiz ? [S, {x: v, y: S.y}, {x: v, y: E.y}, E] : [S, {x: S.x, y: v}, {x: E.x, y: v}, E]);
 }
 function computeRoute(A, B, obst, cheap) {
-  const Sp = A.box ? stubPt(A.P, A.dir) : {x: snapG(A.P.x), y: snapG(A.P.y)};
-  const Ep = B.box ? stubPt(B.P, B.dir) : {x: snapG(B.P.x), y: snapG(B.P.y)};
+  /* Two boxes facing each other with less than two cells between them: the usual one-cell stubs would
+     cross and the arrow would loop. Use stubs of half the gap instead (a straight line when aligned). */
+  let len = G, pad = 8;
+  if (A.box && B.box && ((A.dir + 2) & 3) === B.dir) {
+    const d = A.dir === 0 ? B.P.x - A.P.x : A.dir === 2 ? A.P.x - B.P.x : A.dir === 1 ? B.P.y - A.P.y : A.P.y - B.P.y;
+    if (d <= 0) {   // touching or overlapping: just join the two border points
+      const hz = A.dir === 0 || A.dir === 2;
+      if (hz ? A.P.y === B.P.y : A.P.x === B.P.x) return [A.P, B.P];
+      return hz ? [A.P, {x: (A.P.x + B.P.x) / 2, y: A.P.y}, {x: (A.P.x + B.P.x) / 2, y: B.P.y}, B.P]
+                : [A.P, {x: A.P.x, y: (A.P.y + B.P.y) / 2}, {x: B.P.x, y: (A.P.y + B.P.y) / 2}, B.P];
+    }
+    if (d < 2 * G) { len = d / 2; pad = Math.max(0, Math.min(8, len - 1)); }
+  }
+  const Sp = A.box ? stubPt(A.P, A.dir, len) : {x: snapG(A.P.x), y: snapG(A.P.y)};
+  const Ep = B.box ? stubPt(B.P, B.dir, len) : {x: snapG(B.P.x), y: snapG(B.P.y)};
   const sDir = A.box ? A.dir : -1, eDir = B.box ? (B.dir + 2) & 3 : -1;
   /* Candidates all have the same (shortest) length; pick the one with the fewest turns.
      Ties go to the earlier candidate: Z-shapes (jog at the midpoint) come before L-shapes,
@@ -688,7 +784,7 @@ function computeRoute(A, B, obst, cheap) {
   }
   let bestPts = null;
   for (const c of cands) {
-    if (hitsAny(c, obst)) continue;
+    if (hitsAny(c, obst, pad)) continue;
     const raw = dedupe([A.P, ...c, B.P]);
     if (reverses(raw)) continue;
     const pts = simplify(raw);
@@ -751,6 +847,72 @@ const hoverK = (type, id) => hover && hover.type === type && hover.id === id ? h
 
 let raf = 0;
 function scheduleDraw() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
+const triEls = {};   // direction triangles for boxes that touch (drawn above the boxes)
+const GPAD = 26, GTOP = 36;
+const parentOf = id => groups.find(g => g.members.includes(id)) || null;
+function descIds(id) {   // everything inside group `id`, nested groups included
+  const out = [], walk = gid => { const g = groups.find(q => q.id === gid); if (!g) return; g.members.forEach(m => { if (out.includes(m)) return; out.push(m); walk(m); }); };
+  walk(id); return out;
+}
+const ancestorsOf = id => { const out = []; let p = parentOf(id); while (p && !out.includes(p.id)) { out.push(p.id); p = parentOf(p.id); } return out; };
+/* Raw bounds of a set of group members (boxes, nodes, nested frames) plus the arrows running between them. */
+function memberBounds(ids, rectOf) {
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity, n = 0;
+  const grow = (ax, ay, bx, by) => { x1 = Math.min(x1, ax); y1 = Math.min(y1, ay); x2 = Math.max(x2, bx); y2 = Math.max(y2, by); n++; };
+  const inside = new Set();
+  ids.forEach(id => {
+    inside.add(id); descIds(id).forEach(q => inside.add(q));
+    const b = boxes.find(q => q.id === id), nd = b ? null : nodes.find(q => q.id === id), gg = b || nd ? null : groups.find(q => q.id === id);
+    if (b && els[b.id]) { const r = R(b); grow(r.x, r.y, r.x + r.w, r.y + r.h); }
+    else if (nd) grow(nd.x - 8, nd.y - 8, nd.x + 8, nd.y + 8);
+    else if (gg) { const r = (rectOf && rectOf.get(gg.id)) || gg; grow(r.x, r.y, r.x + r.w, r.y + r.h); }
+  });
+  edges.forEach(e => {   // an arrow with both ends inside the group belongs to it
+    if (!inside.has(e.from) || !inside.has(e.to) || !routes[e.id]) return;
+    routes[e.id].pts.forEach(q => grow(q.x, q.y, q.x, q.y));
+  });
+  return n ? {x1, y1, x2, y2} : null;
+}
+const padRect = bb => {
+  const x = Math.floor((bb.x1 - GPAD) / G) * G, y = Math.floor((bb.y1 - GTOP) / G) * G;
+  return {x, y, w: Math.ceil((bb.x2 + GPAD) / G) * G - x, h: Math.ceil((bb.y2 + GPAD) / G) * G - y};
+};
+const unionRect = (a, b) => {
+  const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
+  return {x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y};
+};
+/* Frames keep the size you give them, grow to hold anything inside, and refit tightly when
+   something leaves (live while you drag it out, committed on release). */
+function drawGroups() {
+  const live = new Set(), par = new Map(), dep = new Map(), rect = new Map();
+  groups.forEach(g => g.members.forEach(m => par.set(m, g.id)));
+  const depth = id => { if (dep.has(id)) return dep.get(id); dep.set(id, 0); const v = par.has(id) ? depth(par.get(id)) + 1 : 0; dep.set(id, v); return v; };
+  groups.forEach(g => depth(g.id));
+  const dragging = drag && drag.t === 'move' && drag.moved;
+  const leaving = new Map(), joining = new Map(), add = (m, k, v) => { if (!m.has(k)) m.set(k, new Set()); m.get(k).add(v); };
+  if (dragging) groupDrops(drag).forEach((tid, id) => {
+    const P = parentOf(id), pid = P ? P.id : null;
+    if (pid !== tid) { if (P) add(leaving, P.id, id); if (tid) add(joining, tid, id); }
+  });
+  [...groups].sort((a, b) => dep.get(b.id) - dep.get(a.id)).forEach(g => {   // children before parents
+    const L = leaving.get(g.id), J = joining.get(g.id), preview = !!(L || J || (dragging && drag.frozen && drag.frozen.has(g.id)));
+    const eff = g.members.filter(m => !(L && L.has(m))).concat(J ? [...J] : []);
+    let r = {x: g.x, y: g.y, w: g.w, h: g.h};
+    const bb = eff.length ? memberBounds(eff, rect) : null;
+    if (bb) r = (g.refit || L) ? padRect(bb) : unionRect(r, padRect(bb));
+    else if (L && !eff.length && g.fit) r = {x: g.x, y: g.y, w: g.w, h: g.h};
+    rect.set(g.id, r);
+    if (!preview) { g.x = r.x; g.y = r.y; g.w = r.w; g.h = r.h; g.refit = false; }
+    live.add(g.id);
+    let el = gels[g.id];
+    if (!el) { el = gels[g.id] = document.createElement('div'); el.className = 'grp'; el.innerHTML = '<div class="glabel"></div>'; world.insertBefore(el, world.firstChild); }
+    el.style.left = r.x + 'px'; el.style.top = r.y + 'px'; el.style.width = r.w + 'px'; el.style.height = r.h + 'px';
+    el.style.zIndex = dep.get(g.id);
+    el.firstChild.textContent = g.label; el.classList.toggle('sel', selSet.has(g.id));
+    el.classList.toggle('drop', !!(dragging && drag.dropIds && drag.dropIds.has(g.id)));
+  });
+  for (const id in gels) if (!live.has(id)) { gels[id].remove(); delete gels[id]; }
+}
 function draw() {
   const nm = new Map(nodes.map(n => [n.id, n]));
   const rects = new Map();
@@ -802,8 +964,28 @@ function draw() {
     g.classList.toggle('sel', selSet.has(e.id));
     const w = e.w || 3, hw = w + hoverK('edge', e.id) * 5;
     let pts = rc.pts.map(p => ({...p}));
-    const head = g.querySelector('.head');
-    if (pts.length >= 2) {
+    const head = g.querySelector('.head'), ln0 = g.querySelector('.line');
+    let tl = 0; for (let i = 0; i < rc.pts.length - 1; i++) tl += Math.hypot(rc.pts[i + 1].x - rc.pts[i].x, rc.pts[i + 1].y - rc.pts[i].y);
+    rc.tri = null;
+    const fd = (A.box && B.box && ((A.dir + 2) & 3) === B.dir) ? (A.dir === 0 ? B.P.x - A.P.x : A.dir === 2 ? A.P.x - B.P.x : A.dir === 1 ? B.P.y - A.P.y : A.P.y - B.P.y) : 1e9;
+    if ((tl < 1 || fd <= 0) && A.box && B.box) {   // touching boxes: no line to draw, so show a small direction triangle on the shared border
+      const u = [[1, 0], [0, 1], [-1, 0], [0, -1]][A.dir], hl = Math.min(8 + w * 1.6, 22), hwid = hl * .55;
+      const px = -u[1], py = u[0], twin = edges.find(o => o !== e && o.from === e.to && o.to === e.from);
+      const off = twin ? (e.id < twin.id ? 1 : -1) * (hwid * .6 + 2) : 0;   // two-way pair: sit side by side
+      const c = {x: rc.pts[0].x + px * off, y: rc.pts[0].y + py * off};
+      const tip = {x: c.x + u[0] * hl / 2, y: c.y + u[1] * hl / 2}, bx = c.x - u[0] * hl / 2, by = c.y - u[1] * hl / 2;
+      let tri = triEls[e.id];
+      if (!tri) { tri = triEls[e.id] = S('polygon', {}); $('#tris').appendChild(tri); }
+      tri.setAttribute('points', `${tip.x},${tip.y} ${bx + px * hwid},${by + py * hwid} ${bx - px * hwid},${by - py * hwid}`);
+      tri.setAttribute('fill', e.color); tri.classList.toggle('sel', selSet.has(e.id));
+      rc.tri = {x: c.x, y: c.y, r: hl * .6 + 4};
+      head.style.display = 'none'; ln0.style.display = 'none';
+    } else {
+      if (triEls[e.id]) { triEls[e.id].remove(); delete triEls[e.id]; }
+      ln0.style.display = '';
+    }
+    if (rc.tri) { /* triangle only */ }
+    else if (pts.length >= 2) {
       const z0 = pts[pts.length - 1], y = pts[pts.length - 2];
       const L = Math.hypot(z0.x - y.x, z0.y - y.y) || 1, ux = (z0.x - y.x) / L, uy = (z0.y - y.y) / L;
       const gap = B.box ? 0 : Math.min(nodeR(nm.get(e.to)) + 1, L * .4);   // into a node: stop at its rim
@@ -823,14 +1005,16 @@ function draw() {
     t.setAttribute('x', m.x); t.setAttribute('y', m.y - (w / 2 + 6)); t.textContent = e.label || '';
   }
   for (const id in gEls) if (!live.has(id)) { gEls[id].remove(); delete gEls[id]; }
+  for (const id in triEls) if (!live.has(id)) { triEls[id].remove(); delete triEls[id]; }
   for (const id in routes) if (!live.has(id)) delete routes[id];
 
+  drawGroups();
   syncNodeEls();
   nodes.forEach(n => {
     const c = nEls[n.id], ce = edges.find(e => e.to === n.id) || edges.find(e => e.from === n.id);
     c.setAttribute('cx', n.x); c.setAttribute('cy', n.y);
     c.setAttribute('r', nodeR(n) + hoverK('node', n.id) * 3);
-    c.setAttribute('fill', ce ? ce.color : EDGE_DEFAULT);
+    c.setAttribute('fill', n.color || (ce ? ce.color : EDGE_DEFAULT));
     c.classList.toggle('sel', selSet.has(n.id));
   });
 
@@ -840,6 +1024,14 @@ function draw() {
   if (showS) { $('#hS').setAttribute('cx', E.A.P.x); $('#hS').setAttribute('cy', E.A.P.y); }
   if (showE) { $('#hE').setAttribute('cx', E.B.P.x); $('#hE').setAttribute('cy', E.B.P.y); }
   const sbx = sel && sel.type === 'box' && boxes.find(x => x.id === sel.id);
+  const sg = sel && sel.type === 'group' && groups.find(q => q.id === sel.id);
+  document.querySelectorAll('.grsz').forEach(h => {
+    h.classList.toggle('on', !!sg);
+    if (!sg) return;
+    const s = (document.body.classList.contains('touch') ? 24 : 10) / view.z, c = h.dataset.c;
+    h.setAttribute('width', s); h.setAttribute('height', s);
+    h.setAttribute('x', sg.x + (c.includes('e') ? sg.w : 0) - s / 2); h.setAttribute('y', sg.y + (c.includes('s') ? sg.h : 0) - s / 2);
+  });
   const bon = !!(sbx && els[sbx.id]);
   document.querySelectorAll('.rsz').forEach(h => {
     h.classList.toggle('on', bon);
@@ -858,6 +1050,10 @@ function pickAt(p, exclude) {
     if (n.id === exclude) continue;
     const d = Math.hypot(p.x - n.x, p.y - n.y), rr = nodeR(n) + zNode;
     if (d <= rr) return {type: 'node', id: n.id, k: 1 - d / rr};
+  }
+  for (const e of edges) {   // a touching-boxes triangle sits on both borders: let it win
+    const rc = routes[e.id];
+    if (e.id !== exclude && rc && rc.tri && Math.hypot(p.x - rc.tri.x, p.y - rc.tri.y) <= rc.tri.r * Math.max(1, tolK * .8)) return {type: 'edge', id: e.id, d: 0, k: 1};
   }
   const order = boxes.filter(b => els[b.id] && b.id !== exclude)
     .sort((a, b) => (+els[b.id].style.zIndex || 1) - (+els[a.id].style.zIndex || 1));
@@ -880,7 +1076,20 @@ function pickAt(p, exclude) {
     const d = polyDist(p, routes[e.id].pts);
     if (d <= zEdge && (!best || d < best.d)) best = {type: 'edge', id: e.id, d, k: 1 - d / zEdge};
   }
-  return best;
+  if (best) return best;
+  const zG = 10 * tolK / view.z; let gb = null;
+  for (const g of groups) {
+    if (g.id === exclude) continue;
+    const inX = p.x >= g.x - zG && p.x <= g.x + g.w + zG, inY = p.y >= g.y - zG && p.y <= g.y + g.h + zG;
+    if (!inX || !inY) continue;
+    const dEdge = Math.min(Math.abs(p.x - g.x), Math.abs(p.x - g.x - g.w), Math.abs(p.y - g.y), Math.abs(p.y - g.y - g.h));
+    const tab = p.x >= g.x && p.x <= g.x + Math.min(g.w, 40 + g.label.length * 8) && p.y >= g.y && p.y <= g.y + 26 * Math.max(1, tolK * .9);
+    if ((dEdge <= zG || tab) && (!gb || g.w * g.h < gb.w * gb.h)) gb = g;
+  }
+  if (gb) return {type: 'group', id: gb.id, k: 0};
+  let body = null;   // empty space inside a frame: tap selects it (see onDown)
+  for (const g of groups) if (g.id !== exclude && p.x >= g.x && p.x <= g.x + g.w && p.y >= g.y && p.y <= g.y + g.h && (!body || g.w * g.h < body.w * body.h)) body = g;
+  return body ? {type: 'groupbody', id: body.id, k: 0} : null;
 }
 function setHover(h) {
   const prev = hover; hover = h && (h.type === 'border' || h.type === 'edge' || h.type === 'node') ? h : null;
@@ -916,7 +1125,7 @@ function splitEdge(eid, pt) {
     const n = nodes.find(x => x.id === id);
     if (n && Math.abs(n.x - pt.x) < .01 && Math.abs(n.y - pt.y) < .01) return n.id;
   }
-  const n = {id: uid(), x: pt.x, y: pt.y}; nodes.push(n);
+  const n = {id: uid(), x: pt.x, y: pt.y, color: null}; nodes.push(n);
   edges.push({id: uid(), from: n.id, fa: null, to: e.to, ta: e.ta, color: e.color, w: e.w, style: e.style, mode: e.mode, label: ''});
   e.to = n.id; e.ta = null;
   syncNodeEls();
@@ -948,6 +1157,7 @@ const selBoxIds = () => [...selSet].filter(id => isBox(id));
 const selEdges = () => edges.filter(e => selSet.has(e.id));
 function syncSel() {
   for (const id in els) els[id].classList.toggle('sel', selSet.has(id));
+  for (const id in gels) gels[id].classList.toggle('sel', selSet.has(id));
   if (sel && sel.type === 'box' && els[sel.id]) els[sel.id].style.zIndex = ++zTop;
   scheduleDraw(); updBar();
 }
@@ -965,7 +1175,7 @@ function updBar() {
   $('#undo').disabled = hp <= 0;
   $('#redo').disabled = hp >= hist.length - 1;
   $('#delbox').disabled = !selBoxIds().length; $('#delarrow').disabled = !selEdges().length;
-  const es = selEdges(), colorable = selItems().filter(o => o.color !== undefined);
+  const es = selEdges(), colorable = selItems().filter(o => o.color !== undefined || isNode(o.id));
   $('#swap').disabled = !selEdges().length;
   ['#ew', '#es', '#er'].forEach(q => $(q).disabled = !es.length);
   if (es.length) { $('#ew').value = es[0].w || 3; $('#es').value = es[0].style || 'solid'; $('#er').value = es[0].mode || 'avoid'; }
@@ -977,12 +1187,18 @@ function updBar() {
     q.disabled = !colorable.length && !ed; q.style.opacity = colorable.length || ed ? 1 : .35;
   });
   if (one && one.color) $('#custom').value = one.color;
-  $('#selcount').textContent = `Selecting ${selBoxIds().length} box${selBoxIds().length === 1 ? '' : 'es'}`;
+  { const nb = selBoxIds().length, na = selEdges().length, parts = [];
+    if (nb) parts.push(`${nb} box${nb === 1 ? '' : 'es'}`); if (na) parts.push(`${na} arrow${na === 1 ? '' : 's'}`);
+    $('#selcount').textContent = 'Selecting ' + (parts.join(', ') || 'nothing');
+    const mem = [...selSet].filter(id => isBox(id) || isNode(id));
+    $('#grpmake').disabled = !mem.length;
+    $('#grpundo').disabled = !groupsTouched().length;
+    $('#grpsel').disabled = !groups.some(g => selSet.has(g.id)); }
   $('#empty').hidden = boxes.length > 0;
 }
 function applyColor(c, final = true) {
-  const items = selItems().filter(o => o.color !== undefined); if (!items.length) return;
-  items.forEach(o => { const b = isBox(o.id); o.color = c === 'auto' ? (b ? null : EDGE_DEFAULT) : c; if (b) styleBox(o); });
+  const items = selItems().filter(o => o.color !== undefined || isNode(o.id)); if (!items.length) return;
+  items.forEach(o => { const b = isBox(o.id), nd = isNode(o.id); o.color = c === 'auto' ? (b || nd ? null : EDGE_DEFAULT) : c; if (b) styleBox(o); });
   scheduleDraw(); if (final) commit(); else updBar();
 }
 const swatch = (c, cls) => {
@@ -1041,6 +1257,8 @@ $('#swap').onclick = swapEdge;
 $('#expall').onclick = () => { boxes.forEach(b => setCollapsed(b, false)); scheduleDraw(); commit(); closePops(); };
 $('#colall').onclick = () => { boxes.forEach(b => setCollapsed(b, true)); scheduleDraw(); commit(); closePops(); };
 $('#selall').onclick = () => { blurActive(); selectEverything(); closePops(); };
+$('#selboxes').onclick = () => { blurActive(); selectSet(boxes.map(b => b.id)); closePops(); };
+$('#selarrows').onclick = () => { blurActive(); selectSet([...edges.map(e => e.id), ...nodes.map(n => n.id)]); closePops(); };
 $('#selinv').onclick = () => {
   blurActive();
   selectSet([...boxes.map(b => b.id), ...nodes.map(n => n.id), ...edges.map(e => e.id)].filter(id => !selSet.has(id))); closePops();
@@ -1051,7 +1269,7 @@ $('#seldone').onclick = () => exitSelect(true);
 $('#selcancel').onclick = () => exitSelect(false);
 function enterSelect() {
   blurActive(); selectMode = true; prevSel = [...selSet];
-  selectSet(selBoxIds()); document.body.classList.add('selmode'); updBar();
+  selectSet([...selSet].filter(id => !isGroup(id))); document.body.classList.add('selmode'); updBar();
 }
 function exitSelect(keep) {
   if (!selectMode) return;
@@ -1059,6 +1277,164 @@ function exitSelect(keep) {
   if (!keep) selectSet(prevSel.filter(id => byId(id)));
   updBar();
 }
+/* ---------- groups ---------- */
+const itemCenter = id => {
+  const b = boxes.find(q => q.id === id);
+  if (b && els[id]) { const r = R(b); return {x: r.x + r.w / 2, y: r.y + r.h / 2}; }
+  const nd = nodes.find(q => q.id === id); if (nd) return {x: nd.x, y: nd.y};
+  const g = groups.find(q => q.id === id); return g ? {x: g.x + g.w / 2, y: g.y + g.h / 2} : null;
+};
+function groupAt(c, skip) {   // innermost group whose frame contains point c
+  let best = null;
+  groups.forEach(g => {
+    if (skip.has(g.id) || c.x < g.x || c.x > g.x + g.w || c.y < g.y || c.y > g.y + g.h) return;
+    if (!best || g.w * g.h < best.w * best.h) best = g;
+  });
+  return best;
+}
+function groupDrops(d) {   // moved top-level item -> group it would join (or null = no group)
+  const res = new Map(), movedG = new Set(d.its.filter(it => isGroup(it.o.id)).map(it => it.o.id));
+  d.top.forEach(id => {
+    const c = itemCenter(id); if (!c) return;
+    const skip = new Set([id, ...descIds(id), ...movedG]);
+    const t = groupAt(c, skip); res.set(id, t ? t.id : null);
+  });
+  return res;
+}
+function applyDrops(d) {
+  const joined = [];
+  groupDrops(d).forEach((tid, id) => {
+    const P = parentOf(id); if ((P ? P.id : null) === tid) return;
+    if (P) { P.members = P.members.filter(m => m !== id); P.refit = true; }
+    if (tid) { groups.find(g => g.id === tid).members.push(id); joined.push([id, tid]); }
+  });
+  joined.forEach(([id, tid]) => placeInGroup(id, tid));
+}
+/* A newly dropped item is moved to the nearest free spot (nothing touching it), preferring room inside the frame;
+   the frame then grows to hold it. If it already sits clear of everything, it stays put. */
+function placeInGroup(id, tid) {
+  const T = groups.find(g => g.id === tid), o = byId(id); if (!T || !o) return;
+  const own = new Set([id, ...descIds(id)]), anc = new Set([tid, ...ancestorsOf(tid)]), GAP = 2 * G;
+  const obs = [];
+  boxes.forEach(b => { if (own.has(b.id) || !els[b.id]) return; const r = R(b); obs.push({x: r.x - GAP, y: r.y - GAP, w: r.w + 2 * GAP, h: r.h + 2 * GAP}); });
+  nodes.forEach(n => { if (!own.has(n.id)) obs.push({x: n.x - GAP, y: n.y - GAP, w: 2 * GAP, h: 2 * GAP}); });
+  groups.forEach(g => { if (!own.has(g.id) && !anc.has(g.id)) obs.push({x: g.x, y: g.y, w: g.w, h: g.h}); });
+  const isB = isBox(id), isN = isNode(id);
+  const sz = isB ? (() => { const r = R(o); return {w: r.w, h: r.h, ox: 0, oy: 0}; })() : isN ? {w: 16, h: 16, ox: -8, oy: -8} : {w: o.w, h: o.h, ox: 0, oy: 0};
+  const hit = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  const ins = {x: T.x + GPAD, y: T.y + GTOP, w: T.w - 2 * GPAD, h: T.h - GTOP - GPAD};
+  const within = a => a.x >= ins.x && a.y >= ins.y && a.x + a.w <= ins.x + ins.w && a.y + a.h <= ins.y + ins.h;
+  const cx = snapG(o.x), cy = snapG(o.y);
+  let best = null;
+  for (let k = 0; k <= 40 && (!best || k * G <= best.cost); k++) {
+    for (let i = -k; i <= k; i++) for (let j = -k; j <= k; j++) {
+      if (Math.max(Math.abs(i), Math.abs(j)) !== k) continue;
+      const x = cx + i * G, y = cy + j * G, a = {x: x + sz.ox, y: y + sz.oy, w: sz.w, h: sz.h};
+      if (obs.some(q => hit(a, q))) continue;
+      const cost = Math.hypot(i, j) * G + (within(a) ? 0 : 400);
+      if (!best || cost < best.cost) best = {x, y, cost};
+    }
+  }
+  if (!best) return;
+  const dx = best.x - o.x, dy = best.y - o.y; if (!dx && !dy) return;
+  [id, ...descIds(id)].forEach(q => {
+    const m = byId(q); if (!m || m.x === undefined) return;
+    m.x += dx; m.y += dy;
+    if (isBox(q) && els[q]) {
+      const el = els[q]; el.classList.add('settle'); el.style.left = m.x + 'px'; el.style.top = m.y + 'px';
+      setTimeout(() => el.classList.remove('settle'), 300);
+    }
+  });
+  scheduleDraw();
+}
+const groupsTouched = () => {   // selected frames; else the frames directly holding the selected items
+  const sg = groups.filter(g => selSet.has(g.id));
+  return sg.length ? sg : groups.filter(g => g.members.some(m => selSet.has(m)));
+};
+function newGroup(members, rect) {
+  const ps = members.map(parentOf), P = ps.length && ps.every(q => q && q === ps[0]) ? ps[0] : null;   // same parent -> new group nests there
+  const mset = new Set(members);
+  groups.forEach(g => { g.members = g.members.filter(m => !mset.has(m)); });
+  const g = {id: uid(), label: 'Group', members, fit: members.length > 0, x: 0, y: 0, w: 200, h: 120, refit: !rect, ...(rect || {})};
+  groups.push(g); if (P) P.members.push(g.id);
+  groups = groups.filter(q => !(q.fit && !q.members.length));
+  drawGroups(); select({type: 'group', id: g.id}); commit();
+  setTimeout(() => editGroup(g), 0);
+}
+function groupSelected() {
+  const sg = [...selSet].filter(id => isBox(id) || isNode(id) || isGroup(id));
+  const members = sg.filter(id => !sg.some(q => q !== id && isGroup(q) && descIds(q).includes(id)));
+  if (!members.length) return;
+  newGroup(members);
+}
+function createFrame(x1, y1, x2, y2) {
+  exitFrame();
+  const cand = [];
+  boxes.forEach(b => { if (!els[b.id]) return; const r = R(b), cx = r.x + r.w / 2, cy = r.y + r.h / 2; if (cx >= x1 && cx <= x2 && cy >= y1 && cy <= y2) cand.push(b.id); });
+  nodes.forEach(n => { if (n.x >= x1 && n.x <= x2 && n.y >= y1 && n.y <= y2) cand.push(n.id); });
+  groups.forEach(g => { const cx = g.x + g.w / 2, cy = g.y + g.h / 2; if (cx >= x1 && cx <= x2 && cy >= y1 && cy <= y2) cand.push(g.id); });
+  const inside = cand.filter(id => !cand.some(q => q !== id && isGroup(q) && descIds(q).includes(id)));   // outermost only
+  newGroup(inside, {x: x1, y: y1, w: Math.max(x2 - x1, 120), h: Math.max(y2 - y1, 80)});   // keeps the rectangle you drew; grows if members stick out
+}
+function editGroup(g) {
+  if (!g) return;
+  const inp = document.createElement('input'); inp.className = 'edge-input gedit'; inp.placeholder = 'group name';
+  inp.value = g.label; inp.style.left = (g.x + 10) + 'px'; inp.style.top = (g.y + 16) + 'px';
+  world.appendChild(inp); inp.focus(); inp.select();
+  let done = false;
+  const fin = ok => { if (done) return; done = true; if (ok) g.label = inp.value.trim().slice(0, 60) || 'Group'; inp.remove(); scheduleDraw(); commit(); };
+  inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') fin(true); if (ev.key === 'Escape') fin(false); ev.stopPropagation(); });
+  inp.addEventListener('blur', () => fin(true));
+}
+function enterFrame() {
+  closePops(); blurActive(); select(null); frameMode = true; document.body.classList.add('framemode');
+}
+function exitFrame() { frameMode = false; document.body.classList.remove('framemode'); rb.style.display = 'none'; }
+function enterLasso() {
+  closePops(); blurActive(); lassoMode = true; document.body.classList.add('lassomode');
+}
+function exitLasso() { lassoMode = false; document.body.classList.remove('lassomode'); $('#lasso').style.display = 'none'; }
+function pathMid(pts) {
+  let tl = 0; for (let i = 0; i < pts.length - 1; i++) tl += Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+  let h = tl / 2;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+    if (h <= l && l > 0) { const t = h / l; return {x: pts[i].x + (pts[i + 1].x - pts[i].x) * t, y: pts[i].y + (pts[i + 1].y - pts[i].y) * t}; }
+    h -= l;
+  }
+  return pts[0];
+}
+function inPoly(p, poly) {
+  let ins = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i], b = poly[j];
+    if ((a.y > p.y) !== (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x) ins = !ins;
+  }
+  return ins;
+}
+function lassoSelect(poly) {
+  if (poly.length < 3) return;
+  const ids = [];
+  boxes.forEach(b => { const c = itemCenter(b.id); if (c && inPoly(c, poly)) ids.push(b.id); });
+  nodes.forEach(n => { if (inPoly(n, poly)) ids.push(n.id); });
+  edges.forEach(e => { const rc = routes[e.id]; if (rc && rc.pts && rc.pts.length && inPoly(pathMid(rc.pts), poly)) ids.push(e.id); });
+  selectSet(ids);
+}
+$('#sellasso').onclick = () => enterLasso();
+$('#lassocancel').onclick = () => { if (drag && drag.t === 'lasso') drag = null; exitLasso(); };
+$('#grpmake').onclick = () => { closePops(); groupSelected(); };
+$('#grpframe').onclick = () => enterFrame();
+$('#framecancel').onclick = () => { if (drag && drag.frame) drag = null; exitFrame(); };
+$('#grpsel').onclick = () => {
+  const ids = new Set(selSet);
+  [...selSet].filter(isGroup).forEach(gid => descIds(gid).forEach(m => ids.add(m)));
+  edges.forEach(e => { if (ids.has(e.from) && ids.has(e.to)) ids.add(e.id); });   // arrows between members belong to the group
+  closePops(); selectSet([...ids].filter(id => !isGroup(id)));
+};
+$('#grpundo').onclick = () => {
+  const ids = groupsTouched().map(g => g.id); closePops();
+  if (ids.length) delObjs(ids);
+};
 /* ---------- menus ---------- */
 function closePops() { document.querySelectorAll('.pop.open').forEach(q => q.classList.remove('open')); document.querySelectorAll('.mb.open').forEach(q => q.classList.remove('open')); }
 function placePop(pop) {
@@ -1069,13 +1445,13 @@ function placePop(pop) {
 document.querySelectorAll('.mb').forEach(btn => btn.addEventListener('click', () => {
   const pop = $('#pop-' + btn.dataset.m), was = pop.classList.contains('open');
   closePops(); if (was) return;
-  if (selectMode) return;
+  if (selectMode || frameMode || lassoMode) return;
   btn.classList.add('open'); pop.classList.add('open'); placePop(pop);
 }));
 document.querySelectorAll('.pop button').forEach(btn => btn.addEventListener('click', () => {
   if (btn.id === 'undo' || btn.id === 'redo' || btn.id === 'save' || btn.id === 'load' || btn.id === 'reset' || btn.id === 'install' || btn.id === 'swap') closePops();
 }));
-document.addEventListener('pointerdown', e => { if (!e.target.closest('.pop, .mb')) closePops(); }, true);
+document.addEventListener('pointerdown', e => { if (!e.target.closest('.pop, .mb')) closePops(); $('#tinfo').textContent = e.pointerType; }, true);
 window.addEventListener('resize', () => document.querySelectorAll('.pop.open').forEach(placePop));
 $('#reset').onclick = () => { view = {x: 0, y: 0, z: 1}; applyView(); };
 
@@ -1084,6 +1460,7 @@ function rebuild() {
   for (const id in els) { ro.unobserve(els[id]); els[id].remove(); delete els[id]; }
   for (const id in gEls) { gEls[id].remove(); delete gEls[id]; }
   for (const id in nEls) { nEls[id].remove(); delete nEls[id]; }
+  for (const id in gels) { gels[id].remove(); delete gels[id]; }
   routes = {};
   boxes.forEach(mkBox); syncNodeEls(); scheduleDraw();
 }
@@ -1104,7 +1481,7 @@ function load(d) {
     while (seenT.has(normT(t))) t = `${cleanT(b.title) || 'Untitled'} ${i++}`;
     b.title = t; seenT.add(normT(t));
   });
-  nodes = (Array.isArray(d.nodes) ? d.nodes : []).map(n => ({id: String(n.id || uid()), x: snapG(+n.x || 0), y: snapG(+n.y || 0)}));
+  nodes = (Array.isArray(d.nodes) ? d.nodes : []).map(n => ({id: String(n.id || uid()), x: snapG(+n.x || 0), y: snapG(+n.y || 0), color: okc(n.color) ? n.color : null}));
   const ids = new Set([...boxes.map(b => b.id), ...nodes.map(n => n.id)]), boxIds = new Set(boxes.map(b => b.id));
   const anc = (a, fx, fy) => {
     if (a && typeof a === 'object' && a.x != null) return {x: clamp01(+a.x || 0), y: clamp01(+a.y || 0)};
@@ -1120,27 +1497,58 @@ function load(d) {
     w: Math.min(12, Math.max(1, +e.w || 3)), style: ['solid', 'dashed', 'dotted'].includes(e.style) ? e.style : 'solid',
     mode: e.mode === 'direct' ? 'direct' : 'avoid'
   }));
+  groups = (Array.isArray(d.groups) ? d.groups : []).map(g => ({
+    id: String(g.id || uid()), label: g.label == null ? 'Group' : String(g.label).slice(0, 60),
+    members: (Array.isArray(g.members) ? g.members.map(String) : []).filter(m => ids.has(m)), fit: !!g.fit,
+    x: snapG(+g.x || 0), y: snapG(+g.y || 0), w: Math.max(80, snapG(+g.w || 200)), h: Math.max(60, snapG(+g.h || 120))
+  }));
   palette = sanitizePalette(d.colors, [...boxes.map(b => b.color), ...edges.map(e => e.color)]); renderPalette();
   if (d.view && isFinite(d.view.z) && d.view.z > 0) view = {x: +d.view.x || 0, y: +d.view.y || 0, z: +d.view.z};
   selSet = new Set(); sel = null; rebuild(); normalize(); applyView(); updBar();
 }
-$('#save').onclick = async () => {
-  const text = JSON.stringify({...JSON.parse(snap()), view, colors: palette, ver: 5}, null, 2);
+let savedSnap = '';   // map as of the last Save / Load / New; anything different is unsaved work
+const isDirty = () => (boxes.length || nodes.length || groups.length) && snap() !== savedSnap;
+async function saveFile() {   // true = written (or downloaded), false = cancelled or failed
+  const at = snap(), text = JSON.stringify({...JSON.parse(at), view, colors: palette, ver: 5}, null, 2);
   if (window.showSaveFilePicker) {   // Chrome/Edge: real "Save as" dialog with a custom name
     try {
       const h = await showSaveFilePicker({suggestedName: 'ideamap.json', types: [{description: 'Idea Map', accept: {'application/json': ['.json']}}]});
       const w = await h.createWritable(); await w.write(text); await w.close();
-    } catch (err) { if (err && err.name !== 'AbortError') console.error(err); }   // cancel = do nothing
-    return;
+    } catch (err) { if (err && err.name !== 'AbortError') console.error(err); return false; }   // cancel = do nothing
+    savedSnap = at; return true;
   }
   const a = document.createElement('a');   // fallback: plain download
   a.href = URL.createObjectURL(new Blob([text], {type: 'application/json'})); a.download = 'ideamap.json'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-};
-$('#load').onclick = () => $('#file').click();
+  savedSnap = at; return true;
+}
+function askSave() {   // 'save' | 'discard' | 'cancel'
+  return new Promise(res => {
+    const dlg = $('#dlg'), done = v => { dlg.hidden = true; document.removeEventListener('keydown', key, true); res(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done('cancel'); } };
+    document.addEventListener('keydown', key, true);
+    $('#dsave').onclick = () => done('save'); $('#ddisc').onclick = () => done('discard'); $('#dcancel').onclick = () => done('cancel');
+    dlg.hidden = false; $('#dsave').focus();
+  });
+}
+async function okToReplace() {   // false = the user backed out
+  if (!isDirty()) return true;
+  const c = await askSave();
+  if (c === 'cancel') return false;
+  if (c === 'save') return await saveFile();
+  return true;
+}
+function newMap() {
+  blurActive(); palette = PALETTE.slice();
+  load({ver: 5, boxes: [], nodes: [], edges: [], groups: []});
+  view = {x: 0, y: 0, z: 1}; applyView(); hist = []; hp = -1; commit(); savedSnap = snap();
+}
+$('#save').onclick = () => { closePops(); saveFile(); };
+$('#newfile').onclick = async () => { closePops(); if (await okToReplace()) newMap(); };
+$('#load').onclick = async () => { closePops(); if (await okToReplace()) $('#file').click(); };
 $('#file').onchange = async ev => {
   const f = ev.target.files[0]; if (!f) return;
-  try { load(JSON.parse(await f.text())); commit(); } catch (_) { alert('Could not read that file.'); }
+  try { load(JSON.parse(await f.text())); commit(); savedSnap = snap(); } catch (_) { alert('Could not read that file.'); }
   ev.target.value = '';
 };
 
@@ -1155,9 +1563,19 @@ function markDrops(tg) {
 }
 /* drag every selected box and node together; a plain click inside a multi-selection narrows it to that one */
 function startMove(e, soloId) {
-  const its = [];
-  selSet.forEach(id => { const o = byId(id); if (o && (isBox(id) || isNode(id))) its.push({o, ox: o.x, oy: o.y, box: isBox(id)}); });
-  if (its.length) drag = {t: 'move', its, solo: soloId || null, sx: e.clientX, sy: e.clientY, moved: false};
+  const its = [], seen = new Set(), top = [];
+  const add = id => {
+    if (seen.has(id)) return; const o = byId(id); if (!o) return; seen.add(id);
+    its.push({o, ox: o.x, oy: o.y, box: isBox(id)});
+  };
+  const addTree = id => { add(id); if (isGroup(id)) descIds(id).forEach(add); };
+  const sg = [...selSet].filter(id => isBox(id) || isNode(id) || isGroup(id));
+  sg.forEach(id => {   // top-level = not inside another selected group
+    if (!sg.some(q => q !== id && isGroup(q) && descIds(q).includes(id))) top.push(id);
+  });
+  sg.forEach(addTree);
+  const frozen = new Set(); top.forEach(id => ancestorsOf(id).forEach(a => { if (!seen.has(a)) frozen.add(a); }));
+  if (its.length) drag = {t: 'move', its, top, frozen, dropIds: new Set(), solo: soloId || null, sx: e.clientX, sy: e.clientY, moved: false};
 }
 
 stage.addEventListener('contextmenu', e => e.preventDefault());
@@ -1169,7 +1587,21 @@ function onDown(e) {
     stage.style.cursor = 'grabbing'; return;
   }
   if (e.button !== 0) return;
+  if (lassoMode) {   // freehand lasso: items whose centre ends up inside get selected
+    e.preventDefault(); blurActive();
+    const p0 = toWorld(e.clientX, e.clientY); drag = {t: 'lasso', pts: [p0]};
+    $('#lasso').style.display = 'block'; $('#lasso').setAttribute('points', `${p0.x},${p0.y}`); return;
+  }
+  if (frameMode) {   // draw a frame: a rubber-band from empty or occupied space
+    e.preventDefault(); blurActive();
+    drag = {t: 'new', frame: true, p: toWorld(e.clientX, e.clientY), sx: e.clientX, sy: e.clientY}; return;
+  }
   const cls = e.target.classList;
+  if (cls && cls.contains('grsz') && sel && sel.type === 'group') {
+    e.preventDefault();
+    const g = groups.find(q => q.id === sel.id);
+    if (g) { drag = {t: 'gresize', g, c: e.target.dataset.c, moved: false}; return; }
+  }
   if (cls && cls.contains('rsz') && sel && sel.type === 'box') {
     e.preventDefault();
     const b = boxes.find(x => x.id === sel.id), el = els[b.id], r = R(b);
@@ -1183,11 +1615,15 @@ function onDown(e) {
     drag = {t: 'handle', which: e.target.dataset.w, id: sel.id, moved: false};
     document.body.style.cursor = 'grabbing'; return;
   }
-  const p = toWorld(e.clientX, e.clientY), pk = pickAt(p);
+  const p = toWorld(e.clientX, e.clientY);
+  let pk = pickAt(p), tapGroup = null;
+  if (pk && pk.type === 'groupbody') {   // selected frame: its inside drags it; otherwise it's empty canvas, but a plain tap selects the frame
+    if (selSet.has(pk.id) && !selectMode) pk = {type: 'group', id: pk.id}; else { tapGroup = pk.id; pk = null; }
+  }
   setHover(null);
   if (selectMode) {   // tap boxes to toggle them; empty space pans
     e.preventDefault(); blurActive();
-    if (pk && (pk.type === 'box' || pk.type === 'border')) toggleSel(pk.id);
+    if (pk && (pk.type === 'box' || pk.type === 'border' || pk.type === 'node' || pk.type === 'edge')) toggleSel(pk.id);
     else drag = {t: 'pan', sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y};
     return;
   }
@@ -1217,6 +1653,14 @@ function onDown(e) {
     startMove(e, multi ? pk.id : null);
     return;
   }
+  if (pk && pk.type === 'group') {
+    e.preventDefault(); blurActive();
+    if (e.shiftKey) { toggleSel(pk.id); return; }
+    const multi = selSet.size > 1 && selSet.has(pk.id);
+    if (!multi) select({type: 'group', id: pk.id});
+    startMove(e, multi ? pk.id : null);
+    return;
+  }
   if (pk && pk.type === 'edge') {
     e.preventDefault(); blurActive();
     if (e.shiftKey) { toggleSel(pk.id); return; }
@@ -1232,11 +1676,11 @@ function onDown(e) {
   const gs = getSelection(); if (gs) gs.removeAllRanges();
   if (e.touch) {   // touch: empty-space drag pans (multi-select mode keeps the selection)
     if (!e.shiftKey) select(null);
-    drag = {t: 'pan', sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y};
+    drag = {t: 'pan', tapGroup, sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y};
     return;
   }
   select(null);
-  drag = {t: 'new', p, sx: e.clientX, sy: e.clientY};
+  drag = {t: 'new', tapGroup, p, sx: e.clientX, sy: e.clientY};
 }
 stage.addEventListener('mousedown', e => { if (!fromTouch()) onDown(e); });
 
@@ -1254,7 +1698,10 @@ function onMove(e) {
     return;
   }
   const p = toWorld(e.clientX, e.clientY);
-  if (drag.t === 'pan') {
+  if (drag.t === 'lasso') {
+    const l = drag.pts[drag.pts.length - 1];
+    if (Math.hypot(p.x - l.x, p.y - l.y) > 2 / view.z) { drag.pts.push(p); $('#lasso').setAttribute('points', drag.pts.map(q => q.x + ',' + q.y).join(' ')); }
+  } else if (drag.t === 'pan') {
     view.x = drag.vx + e.clientX - drag.sx; view.y = drag.vy + e.clientY - drag.sy; applyView();
   } else if (drag.t === 'move') {
     if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 3) {
@@ -1268,6 +1715,7 @@ function onMove(e) {
         it.o.x = it.ox + dx; it.o.y = it.oy + dy;
         if (it.box) { els[it.o.id].style.left = it.o.x + 'px'; els[it.o.id].style.top = it.o.y + 'px'; }
       });
+      drag.dropIds = new Set([...groupDrops(drag).values()].filter(Boolean));
       scheduleDraw();
     }
   } else if (drag.t === 'new') {
@@ -1276,6 +1724,13 @@ function onMove(e) {
       display: 'block', left: Math.min(s0.x, c.x) + 'px', top: Math.min(s0.y, c.y) + 'px',
       width: Math.abs(c.x - s0.x) + 'px', height: Math.abs(c.y - s0.y) + 'px'
     });
+  } else if (drag.t === 'gresize') {
+    const g = drag.g, c = drag.c, MINW = 80, MINH = 60;
+    const bb = g.members.length ? memberBounds(g.members) : null, mr = bb ? padRect(bb) : null;
+    let l = g.x, t = g.y, r = g.x + g.w, bt = g.y + g.h;
+    if (c.includes('w')) l = Math.min(snapG(p.x), r - MINW, mr ? mr.x : Infinity); else r = Math.max(snapG(p.x), l + MINW, mr ? mr.x + mr.w : -Infinity);
+    if (c.includes('n')) t = Math.min(snapG(p.y), bt - MINH, mr ? mr.y : Infinity); else bt = Math.max(snapG(p.y), t + MINH, mr ? mr.y + mr.h : -Infinity);
+    g.x = l; g.y = t; g.w = r - l; g.h = bt - t; drag.moved = true; scheduleDraw();
   } else if (drag.t === 'resize') {
     const c = drag.c, MINW = 120, b = drag.b;
     let l = drag.sx, t = drag.sy, r = drag.sx + drag.sw, bt = drag.sy + drag.sh;
@@ -1311,17 +1766,19 @@ window.addEventListener('mousemove', e => { if (!fromTouch()) onMove(e); });
 function onUp(e) {
   if (!drag) return;
   const d = drag; drag = null;
+  if (d.tapGroup && !selectMode && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 6) select({type: 'group', id: d.tapGroup});
   stage.style.cursor = space ? 'grab' : ''; document.body.style.cursor = '';
   document.body.classList.remove('linking');
-  if (d.t === 'move') { if (d.moved) commit(); else if (d.solo) select(itemOf(d.solo)); }
-  else if ((d.t === 'handle' || d.t === 'resize') && d.moved) commit();
+  if (d.t === 'lasso') { lassoSelect(d.pts); exitLasso(); }
+  else if (d.t === 'move') { if (d.moved) { applyDrops(d); commit(); } else if (d.solo) select(itemOf(d.solo)); }
+  else if ((d.t === 'handle' || d.t === 'resize' || d.t === 'gresize') && d.moved) commit();
   else if (d.t === 'new') {
     rb.style.display = 'none';
     if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 10) return;
     const c = toWorld(e.clientX, e.clientY);
     const x1 = snapG(Math.min(d.p.x, c.x)), y1 = snapG(Math.min(d.p.y, c.y));
     const x2 = snapG(Math.max(d.p.x, c.x)), y2 = snapG(Math.max(d.p.y, c.y));
-    newBox(x1, y1, Math.max(x2 - x1, 160), Math.max(y2 - y1, 60));
+    if (d.frame) createFrame(x1, y1, x2, y2); else newBox(x1, y1, Math.max(x2 - x1, 160), Math.max(y2 - y1, 60));
   } else if (d.t === 'link') {
     if (tmp) { tmp.remove(); tmp = null; }
     markDrops(null); setHover(null);
@@ -1349,6 +1806,7 @@ window.addEventListener('mouseup', e => { if (!fromTouch()) onUp(e); });
 function newBox(x, y, w, h) {
   const b = {id: uid(), x, y, w, h, title: '', color: defaultBoxColor(), lines: [], collapsed: false};
   boxes.push(b); mkBox(b); els[b.id].dataset.fresh = '1';
+  { const g = groupAt({x: x + w / 2, y: y + h / 2}, new Set()); if (g) g.members.push(b.id); }   // created inside a frame: joins it
   select({type: 'box', id: b.id});
   setTimeout(() => editTitle(b), 0);
 }
@@ -1362,18 +1820,19 @@ function cancelDrag() {
   const d = drag; if (!d) return; drag = null;
   if (d.t === 'move') d.its.forEach(it => { it.o.x = it.ox; it.o.y = it.oy; if (it.box && els[it.o.id]) { els[it.o.id].style.left = it.o.x + 'px'; els[it.o.id].style.top = it.o.y + 'px'; } });
   if (tmp) { tmp.remove(); tmp = null; }
-  markDrops(null); setHover(null); rb.style.display = 'none';
+  markDrops(null); setHover(null); rb.style.display = 'none'; if (d.t === 'lasso') $('#lasso').style.display = 'none';
   document.body.classList.remove('linking'); document.body.style.cursor = '';
   scheduleDraw();
 }
 const twoTouches = () => { const [a, b] = [...touches.values()]; return b ? {a, b, d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2} : null; };
 function doubleTap(x, y, target) {
-  if (selectMode) return;
+  if (selectMode || frameMode || lassoMode) return;
   const t = target.closest && target.closest('.title');
   if (t) { const b = boxes.find(q => q.id === t.closest('.box').dataset.id); if (b) editTitle(b); return; }
   const p = toWorld(x, y), pk = pickAt(p);
   if (pk && pk.type === 'edge') { const ed = edges.find(q => q.id === pk.id); if (ed) editLabel(ed); }
-  else if (!pk) newBox(snapG(p.x), snapG(p.y), 160, 60);
+  else if (pk && pk.type === 'group') editGroup(groups.find(q => q.id === pk.id));
+  else if (!pk || pk.type === 'groupbody') newBox(snapG(p.x), snapG(p.y), 160, 60);
 }
 stage.addEventListener('pointerdown', e => {
   tolK = e.pointerType === 'touch' ? 1.75 : 1;
@@ -1426,11 +1885,12 @@ stage.addEventListener('wheel', e => {
 }, {passive: false});
 
 stage.addEventListener('dblclick', e => {
-  if (fromTouch() || selectMode) return;
+  if (fromTouch() || selectMode || frameMode || lassoMode) return;
   const t = e.target.closest('.title');
   if (t) { const b = boxes.find(x => x.id === t.closest('.box').dataset.id); if (b) editTitle(b); return; }
   const pk = pickAt(toWorld(e.clientX, e.clientY));
   if (pk && pk.type === 'edge') { const ed = edges.find(x => x.id === pk.id); if (ed) editLabel(ed); }
+  else if (pk && pk.type === 'group') editGroup(groups.find(x => x.id === pk.id));
 });
 
 window.addEventListener('keydown', e => {
@@ -1449,7 +1909,7 @@ window.addEventListener('keydown', e => {
   else if (mod && k === 'y') { e.preventDefault(); redo(); }
   else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); if (selSet.size) delObjs([...selSet]); }
   else if (e.key === 'Enter' && sel && sel.type === 'edge') { const ed = edgeSel(); if (ed) editLabel(ed); }
-  else if (e.key === 'Escape') { if (selectMode) exitSelect(false); else { closePops(); select(null); } }
+  else if (e.key === 'Escape') { if (lassoMode) exitLasso(); else if (selectMode) exitSelect(false); else if (frameMode) exitFrame(); else { closePops(); select(null); } }
 });
 window.addEventListener('keyup', e => { if (e.code === 'Space') { space = false; if (!drag) stage.style.cursor = ''; } });
 
@@ -1472,7 +1932,7 @@ $('#install').onclick = async () => {
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
-window.__ideamap ={get boxes() { return boxes; }, get nodes() { return nodes; }, get edges() { return edges; }, get routes() { return routes; }, get ends() { return ends; }};
+window.__ideamap ={get boxes() { return boxes; }, get nodes() { return nodes; }, get edges() { return edges; }, get routes() { return routes; }, get ends() { return ends; }, get groups() { return groups; }};
 })();
 </script>
 </body>
