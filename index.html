@@ -109,7 +109,9 @@ body.linking .hnd,body.linking .rsz,body.linking .grsz{pointer-events:none}
 #toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);z-index:120;max-width:90vw;padding:7px 14px;border-radius:8px;
   background:var(--panel);color:var(--txt);border:1px solid var(--line);box-shadow:0 6px 24px var(--shadow);font-size:13px}
 #toast[hidden]{display:none}
-#hint{position:fixed;left:12px;bottom:10px;z-index:90;font-size:12px;opacity:.6;max-width:70vw;pointer-events:none}
+#hint{position:fixed;left:12px;bottom:10px;z-index:90;font-size:12px;opacity:.6;max-width:62vw;pointer-events:none}
+#saved{position:fixed;right:12px;bottom:10px;z-index:90;font-size:12px;opacity:.55;max-width:34vw;text-align:right;pointer-events:none}
+@media (max-width:700px){#saved{left:12px;right:auto;bottom:2px;max-width:none;font-size:11px}}
 #empty{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px;box-sizing:border-box;pointer-events:none;opacity:.4;font-size:18px}
 #empty[hidden]{display:none}
 #bar{flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 16px)}
@@ -152,6 +154,9 @@ body.framemode #stage{cursor:crosshair}
 .grp{position:absolute;z-index:0;box-sizing:border-box;pointer-events:none;border:2px dashed color-mix(in srgb,var(--txt) 45%,transparent);border-radius:16px;
   background:color-mix(in srgb,var(--acc) 5%,transparent)}
 .box.settle{transition:left .2s ease,top .2s ease}
+.grp.tinted{border-color:color-mix(in srgb,var(--gt) 75%,transparent);background:color-mix(in srgb,var(--gt) 16%,transparent)}
+.grp.tinted .glabel{color:color-mix(in srgb,var(--gt) 70%,var(--txt));opacity:.95}
+.grp.tinted.sel{border-color:var(--acc);background:color-mix(in srgb,var(--gt) 24%,transparent)}
 .grp.drop{border-style:solid;border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,transparent)}
 .grp.sel{border-style:solid;border-color:var(--acc);background:color-mix(in srgb,var(--acc) 9%,transparent)}
 .glabel{position:absolute;left:12px;top:6px;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px system-ui;opacity:.75;letter-spacing:.02em}
@@ -198,7 +203,7 @@ body.framemode #stage{cursor:crosshair}
 </div>
 <div class="pop" id="pop-view">
   <button id="reset">Reset view</button>
-  <div id="ver" style="font-size:11px;opacity:.55;padding:2px 4px">v1.3.0 &middot; touch: <span id="tinfo">?</span></div>
+  <div id="ver" style="font-size:11px;opacity:.55;padding:2px 4px">v1.4.0 &middot; touch: <span id="tinfo">?</span></div>
   <button id="theme" data-keep title="Theme: follows system by default">Theme</button>
 </div>
 <div class="pop" id="pop-select">
@@ -214,6 +219,10 @@ body.framemode #stage{cursor:crosshair}
 <div class="pop" id="pop-box">
   <button id="expall">Expand all</button>
   <button id="colall">Collapse all</button>
+  <hr>
+  <button id="cpy" title="Ctrl+C">Copy</button>
+  <button id="pst" title="Ctrl+V">Paste</button>
+  <button id="dup" title="Ctrl+D">Duplicate</button>
   <hr>
   <button id="delbox">Delete selected boxes</button>
 </div>
@@ -247,7 +256,8 @@ body.framemode #stage{cursor:crosshair}
 </div></div>
 <div id="selpop"><b id="selcount">Selecting nothing</b><button id="seldone">Done</button><button id="selcancel">Cancel</button></div>
 <input type="file" id="file" accept=".json,application/json" hidden>
-<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; Touch: drag = pan, two fingers = zoom, double-tap = new box / rename &middot; v1.3.0</div>
+<div id="saved">All changes are saved automatically in this browser.</div>
+<div id="hint">Drag empty space: new box &middot; Drag from a box border: arrow &middot; Drag from an arrow: branch (makes a node) &middot; Drop on an arrow: join (makes a node) &middot; Drag a node to move it &middot; Wheel: zoom &middot; Right/middle-drag or Space+drag: pan &middot; Box selected: corners resize, corner button collapses (hold 2s = all) &middot; Arrow selected: drag end dots, Swap reverses &middot; Double-click: rename / label &middot; Shift-click: multi-select &middot; Ctrl+A: select all (or a selected box's text) &middot; Del: delete &middot; Touch: drag = pan, two fingers = zoom, double-tap = new box / rename &middot; v1.4.0</div>
 
 <script>
 /* on-screen error report (helps debug devices without a console) */
@@ -909,9 +919,79 @@ function drawGroups() {
     el.style.left = r.x + 'px'; el.style.top = r.y + 'px'; el.style.width = r.w + 'px'; el.style.height = r.h + 'px';
     el.style.zIndex = dep.get(g.id);
     el.firstChild.textContent = g.label; el.classList.toggle('sel', selSet.has(g.id));
+    el.classList.toggle('tinted', !!g.color); if (g.color) el.style.setProperty('--gt', g.color);
     el.classList.toggle('drop', !!(dragging && drag.dropIds && drag.dropIds.has(g.id)));
   });
   for (const id in gels) if (!live.has(id)) { gels[id].remove(); delete gels[id]; }
+}
+/* Arrows that would run on top of each other (same line, overlapping stretch) are spread into parallel lanes.
+   Crossings are left alone. Segments that start/end on a node can't move, so the others step aside. */
+const LANE = 9;
+function applyLanes(list, rects) {
+  const segs = [];
+  list.forEach(e => {
+    const rc = routes[e.id]; rc.pts = rc.base.map(p => ({...p}));
+    const P = rc.base, n = P.length; if (n < 2) return;
+    let tl = 0; for (let i = 0; i < n - 1; i++) tl += Math.hypot(P[i + 1].x - P[i].x, P[i + 1].y - P[i].y);
+    if (tl < 1) return;
+    for (let i = 0; i < n - 1; i++) {
+      const a = P[i], b = P[i + 1], hz = Math.abs(a.y - b.y) < .01, vt = Math.abs(a.x - b.x) < .01;
+      if (!hz && !vt) continue;
+      if (hz && vt) continue;
+      segs.push({e, rc, i, hz, c: hz ? a.y : a.x, lo: Math.min(hz ? a.x : a.y, hz ? b.x : b.y), hi: Math.max(hz ? a.x : a.y, hz ? b.x : b.y)});
+    }
+  });
+  const par = segs.map((_, i) => i), find = i => par[i] === i ? i : (par[i] = find(par[i]));
+  for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) {
+    const a = segs[i], b = segs[j];
+    if (a.e === b.e || a.hz !== b.hz || Math.abs(a.c - b.c) > .5) continue;
+    if (Math.min(a.hi, b.hi) - Math.max(a.lo, b.lo) < 6) continue;
+    par[find(i)] = find(j);
+  }
+  const groupsOf = new Map();
+  segs.forEach((s, i) => { const r = find(i); if (!groupsOf.has(r)) groupsOf.set(r, []); groupsOf.get(r).push(s); });
+  const movable = s => {
+    const P = s.rc.base, n = P.length, ends_ = ends[s.e.id];
+    for (const k of [s.i, s.i + 1]) {
+      if (k !== 0 && k !== n - 1) continue;
+      const side = k === 0 ? ends_.A : ends_.B, id = k === 0 ? s.e.from : s.e.to;
+      if (!side.box) return false;
+      const r = rects.get(id); if (!r) return false;
+      const lim = s.hz ? [r.y + 8, r.y + r.h - 8] : [r.x + 8, r.x + r.w - 8];
+      if (lim[1] - lim[0] < 2 * LANE) return false;
+    }
+    for (const k of [s.i - 1, s.i + 1]) {   // neighbours must stay long enough
+      if (k < 0 || k >= n - 1) continue;
+      if (Math.hypot(P[k + 1].x - P[k].x, P[k + 1].y - P[k].y) < 2 * LANE + 6) return false;
+    }
+    return true;
+  };
+  const shift = new Map();   // rc -> Map(pointIdx -> {dx,dy})
+  const put = (rc, k, dx, dy) => { if (!shift.has(rc)) shift.set(rc, new Map()); const m = shift.get(rc), o = m.get(k) || {dx: 0, dy: 0}; o.dx += dx; o.dy += dy; m.set(k, o); };
+  groupsOf.forEach(cl => {
+    if (cl.length < 2) return;
+    cl.sort((p, q) => p.e.id < q.e.id ? -1 : 1);
+    const mv = cl.filter(movable), nfix = cl.length - mv.length;
+    let offs;
+    if (!nfix) offs = mv.map((_, i) => (i - (mv.length - 1) / 2) * LANE);
+    else offs = mv.map((_, i) => (Math.floor(i / 2) + 1) * LANE * (i % 2 ? -1 : 1));
+    mv.forEach((s, i) => {
+      const o = offs[i]; if (!o) return;
+      // keep end points on their box border
+      const P = s.rc.base, n = P.length;
+      for (const k of [s.i, s.i + 1]) {
+        if (k !== 0 && k !== n - 1) continue;
+        const r = rects.get(k === 0 ? s.e.from : s.e.to), lim = s.hz ? [r.y + 8, r.y + r.h - 8] : [r.x + 8, r.x + r.w - 8];
+        const v = s.c + o; if (v < lim[0] || v > lim[1]) return;
+      }
+      for (const k of [s.i, s.i + 1]) put(s.rc, k, s.hz ? 0 : o, s.hz ? o : 0);
+    });
+  });
+  shift.forEach((m, rc) => m.forEach((d, k) => { rc.pts[k].x += d.dx; rc.pts[k].y += d.dy; }));
+  list.forEach(e => {
+    const rc = routes[e.id], en = ends[e.id];
+    if (rc.pts.length > 1 && shift.has(rc)) ends[e.id] = {A: {...en.A, P: rc.pts[0]}, B: {...en.B, P: rc.pts[rc.pts.length - 1]}};
+  });
 }
 function draw() {
   const nm = new Map(nodes.map(n => [n.id, n]));
@@ -930,7 +1010,7 @@ function draw() {
     const q = anchorPt(r, a || facing(r, ref));
     return {P: {x: q.x, y: q.y}, dir: q.dir, box: true};
   };
-  const live = new Set(); ends = {};
+  const live = new Set(), list = []; ends = {};
   const anKey = (id, a) => nm.has(id) ? `n${nm.get(id).x},${nm.get(id).y}` : a ? `a${a.x},${a.y}` : 'auto';
   for (const e of edges) {
     if (!nm.has(e.from) && !rects.has(e.from)) continue;
@@ -955,11 +1035,15 @@ function draw() {
         A = fixedEnd(e.from, e.fa); B = fixedEnd(e.to, e.ta);
         pts = computeRoute(A, B, ob);
       }
-      rc = routes[e.id] = {key, pts, A, B};
+      rc = routes[e.id] = {key, pts, base: pts, A, B};
     }
     const A = rc.A, B = rc.B;
     ends[e.id] = {A, B};
-    live.add(e.id);
+    live.add(e.id); list.push(e);
+  }
+  applyLanes(list, rects);
+  for (const e of list) {
+    const rc = routes[e.id], A = rc.A, B = rc.B;
     const g = gEls[e.id] || mkEdgeG(e);
     g.classList.toggle('sel', selSet.has(e.id));
     const w = e.w || 3, hw = w + hoverK('edge', e.id) * 5;
@@ -1100,7 +1184,7 @@ function setHover(h) {
 /* nearest grid point lying on an arrow's route (for splitting) */
 function gridPtOnRoute(eid, p) {
   const rc = routes[eid], en = ends[eid]; if (!rc) return null;
-  const pts = rc.pts, onG = v => Math.abs(v / G - Math.round(v / G)) < 1e-6;
+  const pts = rc.base, onG = v => Math.abs(v / G - Math.round(v / G)) < 1e-6;
   let best = null, bd = Infinity;
   const consider = (x, y) => {
     const f = pts[0], l = pts[pts.length - 1];
@@ -1175,7 +1259,7 @@ function updBar() {
   $('#undo').disabled = hp <= 0;
   $('#redo').disabled = hp >= hist.length - 1;
   $('#delbox').disabled = !selBoxIds().length; $('#delarrow').disabled = !selEdges().length;
-  const es = selEdges(), colorable = selItems().filter(o => o.color !== undefined || isNode(o.id));
+  const es = selEdges(), colorable = selItems().filter(o => o.color !== undefined || isNode(o.id) || isGroup(o.id));
   $('#swap').disabled = !selEdges().length;
   ['#ew', '#es', '#er'].forEach(q => $(q).disabled = !es.length);
   if (es.length) { $('#ew').value = es[0].w || 3; $('#es').value = es[0].style || 'solid'; $('#er').value = es[0].mode || 'avoid'; }
@@ -1197,8 +1281,8 @@ function updBar() {
   $('#empty').hidden = boxes.length > 0;
 }
 function applyColor(c, final = true) {
-  const items = selItems().filter(o => o.color !== undefined || isNode(o.id)); if (!items.length) return;
-  items.forEach(o => { const b = isBox(o.id), nd = isNode(o.id); o.color = c === 'auto' ? (b || nd ? null : EDGE_DEFAULT) : c; if (b) styleBox(o); });
+  const items = selItems().filter(o => o.color !== undefined || isNode(o.id) || isGroup(o.id)); if (!items.length) return;
+  items.forEach(o => { const b = isBox(o.id), nd = isNode(o.id) || isGroup(o.id); o.color = c === 'auto' ? (b || nd ? null : EDGE_DEFAULT) : c; if (b) styleBox(o); });
   scheduleDraw(); if (final) commit(); else updBar();
 }
 const swatch = (c, cls) => {
@@ -1277,6 +1361,64 @@ function exitSelect(keep) {
   if (!keep) selectSet(prevSel.filter(id => byId(id)));
   updBar();
 }
+/* ---------- copy / paste ---------- */
+let clipMem = null, pasteN = 0;
+function clipData() {   // selection (+ everything inside selected frames) with the arrows/nodes/frames that sit entirely inside it
+  const ids = new Set();
+  [...selSet].forEach(id => { if (isBox(id) || isNode(id)) ids.add(id); else if (isGroup(id)) { ids.add(id); descIds(id).forEach(q => ids.add(q)); } });
+  const nodeIds = new Set([...ids].filter(isNode));
+  edges.forEach(e => { if (selSet.has(e.id) && ids.has(e.from) && ids.has(e.to)) return; });
+  const es = edges.filter(e => ids.has(e.from) && ids.has(e.to));
+  if (!ids.size) return null;
+  const gs = groups.filter(g => ids.has(g.id)).map(g => ({...g, members: g.members.filter(m => ids.has(m))}));
+  return {ideamapClip: 1, boxes: boxes.filter(b => ids.has(b.id)).map(b => ({...b, lines: [...b.lines]})), nodes: nodes.filter(n => ids.has(n.id)).map(n => ({...n})), edges: es.map(e => ({...e})), groups: gs};
+}
+function doCopy(ev) {
+  const d = clipData(); if (!d) return false;
+  clipMem = d; const txt = JSON.stringify(d);
+  if (ev && ev.clipboardData) { ev.clipboardData.setData('text/plain', txt); ev.preventDefault(); }
+  else if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {});
+  showToast('Copied');
+  return true;
+}
+function parseClip(txt) {
+  try { const d = JSON.parse(txt); if (d && d.ideamapClip === 1 && Array.isArray(d.boxes)) return d; } catch (_) {}
+  return null;
+}
+function doPaste(d, step) {
+  if (!d) return;
+  const map = new Map(), k = step == null ? ++pasteN : step, off = k * 2 * G;
+  const nid = id => { if (!map.has(id)) map.set(id, uid()); return map.get(id); };
+  const used = new Set(boxes.map(b => normT(b.title)));
+  const nb = d.boxes.map(b => {
+    let t = cleanT(b.title) || 'Untitled', base = t, i = 2;
+    while (used.has(normT(t))) t = `${base} ${i++}`;
+    used.add(normT(t));
+    return {...b, id: nid(b.id), x: snapG(b.x + off), y: snapG(b.y + off), title: t, lines: [...(b.lines || [])]};
+  });
+  const nn = (d.nodes || []).map(n => ({...n, id: nid(n.id), x: snapG(n.x + off), y: snapG(n.y + off)}));
+  const ne = (d.edges || []).map(e => ({...e, id: uid(), from: nid(e.from), to: nid(e.to)}));
+  const ng2 = (d.groups || []).map(g => ({...g, id: nid(g.id), x: snapG(g.x + off), y: snapG(g.y + off), members: g.members.map(nid)}));
+  boxes.push(...nb); nodes.push(...nn); edges.push(...ne); groups.push(...ng2);
+  nb.forEach(mkBox); syncNodeEls();
+  drawGroups();
+  selectSet([...nb.map(b => b.id), ...nn.map(n => n.id), ...ne.map(e => e.id), ...ng2.filter(g => !ng2.some(q => q.members.includes(g.id))).map(g => g.id)]);
+  scheduleDraw(); commit();
+}
+function doPasteBtn() {
+  if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(t => doPaste(parseClip(t) || clipMem)).catch(() => doPaste(clipMem));
+  else doPaste(clipMem);
+}
+$('#cpy').onclick = () => { closePops(); doCopy(); };
+$('#pst').onclick = () => { closePops(); doPasteBtn(); };
+$('#dup').onclick = () => { closePops(); const d = clipData(); if (d) { doPaste(d, 1); } };
+document.addEventListener('copy', e => { if (isEditing() || getSelection().toString()) return; if (selSet.size) doCopy(e); });
+document.addEventListener('cut', e => { if (isEditing() || getSelection().toString()) return; if (selSet.size && doCopy(e)) delObjs([...selSet]); });
+document.addEventListener('paste', e => {
+  if (isEditing()) return;
+  const d = parseClip(e.clipboardData ? e.clipboardData.getData('text/plain') : '') || clipMem;
+  if (d) { e.preventDefault(); doPaste(d); }
+});
 /* ---------- groups ---------- */
 const itemCenter = id => {
   const b = boxes.find(q => q.id === id);
@@ -1355,7 +1497,7 @@ function newGroup(members, rect) {
   const ps = members.map(parentOf), P = ps.length && ps.every(q => q && q === ps[0]) ? ps[0] : null;   // same parent -> new group nests there
   const mset = new Set(members);
   groups.forEach(g => { g.members = g.members.filter(m => !mset.has(m)); });
-  const g = {id: uid(), label: 'Group', members, fit: members.length > 0, x: 0, y: 0, w: 200, h: 120, refit: !rect, ...(rect || {})};
+  const g = {id: uid(), label: 'Group', color: null, members, fit: members.length > 0, x: 0, y: 0, w: 200, h: 120, refit: !rect, ...(rect || {})};
   groups.push(g); if (P) P.members.push(g.id);
   groups = groups.filter(q => !(q.fit && !q.members.length));
   drawGroups(); select({type: 'group', id: g.id}); commit();
@@ -1498,11 +1640,11 @@ function load(d) {
     mode: e.mode === 'direct' ? 'direct' : 'avoid'
   }));
   groups = (Array.isArray(d.groups) ? d.groups : []).map(g => ({
-    id: String(g.id || uid()), label: g.label == null ? 'Group' : String(g.label).slice(0, 60),
+    id: String(g.id || uid()), label: g.label == null ? 'Group' : String(g.label).slice(0, 60), color: okc(g.color) ? g.color : null,
     members: (Array.isArray(g.members) ? g.members.map(String) : []).filter(m => ids.has(m)), fit: !!g.fit,
     x: snapG(+g.x || 0), y: snapG(+g.y || 0), w: Math.max(80, snapG(+g.w || 200)), h: Math.max(60, snapG(+g.h || 120))
   }));
-  palette = sanitizePalette(d.colors, [...boxes.map(b => b.color), ...edges.map(e => e.color)]); renderPalette();
+  palette = sanitizePalette(d.colors, [...boxes.map(b => b.color), ...edges.map(e => e.color), ...nodes.map(n => n.color), ...groups.map(g => g.color)]); renderPalette();
   if (d.view && isFinite(d.view.z) && d.view.z > 0) view = {x: +d.view.x || 0, y: +d.view.y || 0, z: +d.view.z};
   selSet = new Set(); sel = null; rebuild(); normalize(); applyView(); updBar();
 }
@@ -1906,6 +2048,7 @@ window.addEventListener('keydown', e => {
     else if (!sel) selectEverything();        // otherwise -> every element
   }
   else if (mod && k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  else if (mod && k === 'd') { e.preventDefault(); const d = clipData(); if (d) doPaste(d, 1); }
   else if (mod && k === 'y') { e.preventDefault(); redo(); }
   else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); if (selSet.size) delObjs([...selSet]); }
   else if (e.key === 'Enter' && sel && sel.type === 'edge') { const ed = edgeSel(); if (ed) editLabel(ed); }

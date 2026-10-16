@@ -2,7 +2,7 @@
 
 A single-file flowchart / blueprint editor. Boxes, grid-routed arrows, nodes and groups on an infinite pan-and-zoom canvas. Vanilla JS, no dependencies, installable as a PWA, works with mouse, touch and pen.
 
-**Version 1.3.0** (major.minor.patch)
+**Version 1.4.0** (major.minor.patch)
 
 ## Files
 
@@ -28,12 +28,14 @@ A single-file flowchart / blueprint editor. Boxes, grid-routed arrows, nodes and
 - Resize from the corner handles of a selected box.
 - Own color or Auto (follows the theme).
 - Hold the collapse button 2 s to collapse/expand all.
+- **Copy / Paste / Duplicate** (Box menu, or `Ctrl+C` / `Ctrl+V` / `Ctrl+D`, `Ctrl+X` cuts): copies the selection together with the arrows, nodes and groups that sit entirely inside it. Uses the system clipboard, so it also pastes into another tab or map.
 
 ## Arrows
 
 - Routed along a grid with the fewest turns, avoiding boxes (or "Ignore boxes").
 - The end anchor is chosen automatically; drag an end dot to set one by hand. Moving the box resets a custom end.
 - Per-arrow thickness, line style (solid / dashed / dotted), color, label, and Reverse.
+- Arrows that would run on top of each other are spread into parallel lanes so each stays visible (crossings are left alone).
 - Boxes that are very close get a straight line; touching boxes show a small direction triangle on the shared border (tap it to select the arrow).
 
 ## Nodes
@@ -47,6 +49,7 @@ Small junction dots created by branching or joining arrows. They can be dragged,
 - Drag items in or out; the frame grows and shrinks live, and dropped items are placed in the nearest free spot.
 - Arrows with both ends in a group belong to it. Select a frame to move it or resize it from its corners (clamped to its contents).
 - **Select contents** and **Ungroup** are in the Group menu.
+- **Tint:** select a frame and pick a swatch in the Color menu; Auto clears it.
 
 ## Selecting
 
@@ -68,7 +71,7 @@ Swatch grid applies to the selected boxes, arrows and nodes. Add your own colors
 - **File:** New (asks to save unsaved changes), Save… (file dialog), Load…, Undo, Redo, Install app.
 - **View:** Reset view, Theme (light by default, dark, or follow system).
 - **Box / Arrow / Group / Color:** actions on the current selection.
-- The map autosaves in the browser. Saved files are plain JSON.
+- The map autosaves in the browser (a note at the bottom says so). Saved files are plain JSON.
 
 ## Touch
 
